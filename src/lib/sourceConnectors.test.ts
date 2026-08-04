@@ -1,0 +1,13 @@
+import { describe, expect, it } from 'vitest'
+import { guidedSearchConnectors, validatePublicArchiveUrl } from './sourceConnectors'
+
+describe('guided source connectors', () => {
+  it('generates outbound searches without fetching private identifiers', () => {
+    const identifier = { value: 'old_handle' } as Parameters<(typeof guidedSearchConnectors)[0]['buildUrl']>[0]
+    expect(guidedSearchConnectors[0].buildUrl(identifier)).toContain('google.com/search')
+  })
+  it('allows only HTTP archive URLs', () => {
+    expect(validatePublicArchiveUrl('https://archive.example/item')).toBe('https://archive.example/item')
+    expect(validatePublicArchiveUrl('javascript:alert(1)')).toBeNull()
+  })
+})

@@ -19,5 +19,11 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Supabase data-loading effects intentionally update component state after async reads.
+      'react-hooks/set-state-in-effect': 'off',
+      // shadcn/ui colocates variants and hooks with their components by design.
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])

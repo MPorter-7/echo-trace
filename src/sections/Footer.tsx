@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
 import { EchoWaveform } from '../components/EchoWaveform'
 import { PillButton } from '../components/PillButton'
+import { Link } from 'react-router'
 
 const productLinks = [
   { label: 'Overview', href: '#overview' },
@@ -114,12 +115,12 @@ export function Footer({ onRequestAccess }: FooterProps) {
               ))}
             </ul>
             <div className="flex gap-6">
-              <a href="#" className="text-micro uppercase text-silver hover:text-ink transition-colors duration-200">
+              <Link to="/privacy" className="text-micro uppercase text-silver hover:text-ink transition-colors duration-200">
                 Privacy
-              </a>
-              <a href="#" className="text-micro uppercase text-silver hover:text-ink transition-colors duration-200">
+              </Link>
+              <Link to="/terms" className="text-micro uppercase text-silver hover:text-ink transition-colors duration-200">
                 Terms
-              </a>
+              </Link>
             </div>
           </div>
         </div>

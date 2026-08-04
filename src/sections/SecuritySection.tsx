@@ -112,7 +112,7 @@ export function SecuritySection() {
             <p className="text-body-m text-ink/80 max-w-[440px] leading-relaxed mb-8">
               EchoTrace is built on a foundation of transparency and user sovereignty. We never store passwords, never access private accounts, and never share your data with third parties. Our platform only processes publicly available information that you have the right to access. Every data source is fully auditable, every correlation is explainable, and every result can be traced back to its origin. You decide what to keep, what to discard, and what to share.
             </p>
-            <ArrowLink text="Learn more" href="#" />
+            <ArrowLink text="Read our privacy model" href="/privacy" />
           </div>
 
           {/* Right - image */}

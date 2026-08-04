@@ -212,6 +212,7 @@ export function ThreeCarousel({ scrollProgress }: ThreeCarouselProps) {
 
     window.addEventListener('resize', handleResize)
 
+    const meshes = meshesRef.current
     return () => {
       cancelAnimationFrame(animFrameRef.current)
       window.removeEventListener('resize', handleResize)
@@ -219,7 +220,7 @@ export function ThreeCarousel({ scrollProgress }: ThreeCarouselProps) {
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', onPointerUp)
 
-      meshesRef.current.forEach((mesh) => {
+      meshes.forEach((mesh) => {
         mesh.geometry.dispose()
         ;(mesh.material as THREE.MeshBasicMaterial).dispose()
         mesh.children.forEach((child) => {

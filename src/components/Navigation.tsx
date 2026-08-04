@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router'
 
 interface NavigationProps {
   onRequestAccess?: () => void
@@ -32,9 +33,9 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
       >
         <div className="w-full max-w-content mx-auto px-5 md:px-10 lg:px-20 flex items-center justify-between">
           {/* Logo */}
-          <a href="#" className="text-heading-m font-semibold text-ink">
+          <Link to="/" className="text-heading-m font-semibold text-ink">
             EchoTrace
-          </a>
+          </Link>
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-10">
@@ -62,12 +63,15 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
           </div>
 
           {/* Desktop CTA */}
-          <button
-            onClick={onRequestAccess}
-            className="hidden md:block rounded-pill border border-ink bg-bone text-ink text-body-s font-medium px-6 py-2.5 transition-all duration-300 hover:bg-ink hover:text-bone"
-          >
-            Request Access
-          </button>
+          <div className="hidden items-center gap-3 md:flex">
+            <Link to="/login" className="px-3 py-2 text-body-s font-medium text-ink hover:text-gold">Sign in</Link>
+            <button
+              onClick={onRequestAccess}
+              className="rounded-pill border border-ink bg-bone px-6 py-2.5 text-body-s font-medium text-ink transition-all duration-300 hover:bg-ink hover:text-bone"
+            >
+              Request Access
+            </button>
+          </div>
 
           {/* Mobile Hamburger */}
           <button
@@ -115,6 +119,9 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
                 {link.label}
               </a>
             ))}
+            <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-4xl font-semibold text-ink hover:text-gold">
+              Sign in
+            </Link>
           </div>
         </div>
       )}

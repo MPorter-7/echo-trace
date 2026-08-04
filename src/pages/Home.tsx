@@ -1,20 +1,32 @@
 import { useState } from 'react'
-import '../App.css'
+import { AccessModal } from '../components/AccessModal'
+import { Navigation } from '../components/Navigation'
+import { useLenis } from '../hooks/useLenis'
+import { FeaturesSection } from '../sections/FeaturesSection'
+import { Footer } from '../sections/Footer'
+import { HeroClip } from '../sections/HeroClip'
+import { MainSection } from '../sections/MainSection'
+import { OverviewSection } from '../sections/OverviewSection'
+import { SecuritySection } from '../sections/SecuritySection'
+import { StatsSection } from '../sections/StatsSection'
 
-export default function Home() {
-  const [count, setCount] = useState(0)
+export function Home() {
+  useLenis()
+  const [accessOpen, setAccessOpen] = useState(false)
 
   return (
-    <>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-    </>
+    <div className="relative">
+      <Navigation onRequestAccess={() => setAccessOpen(true)} />
+      <main>
+        <HeroClip />
+        <MainSection />
+        <OverviewSection />
+        <FeaturesSection />
+        <StatsSection />
+        <SecuritySection />
+      </main>
+      <Footer onRequestAccess={() => setAccessOpen(true)} />
+      <AccessModal open={accessOpen} onClose={() => setAccessOpen(false)} />
+    </div>
   )
 }
