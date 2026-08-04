@@ -1,4 +1,4 @@
-import { ArrowRight, Fingerprint, History, SearchCheck, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Fingerprint, History, MailSearch, SearchCheck, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
@@ -7,11 +7,11 @@ import { reconstructionProgress } from '../../lib/reconstruction'
 import { supabase } from '../../lib/supabase'
 import type { TimelineEvent } from '../../types/echo'
 
-interface Counts { identifiers: number; events: number; pending: number; matches: number; accepted: number; archiveFiles: number }
+interface Counts { identifiers: number; events: number; pending: number; matches: number; accepted: number; archiveFiles: number; emailImports: number; emailFindings: number }
 
 export function DashboardHome() {
   const { user } = useAuth()
-  const [counts, setCounts] = useState<Counts>({ identifiers: 0, events: 0, pending: 0, matches: 0, accepted: 0, archiveFiles: 0 })
+  const [counts, setCounts] = useState<Counts>({ identifiers: 0, events: 0, pending: 0, matches: 0, accepted: 0, archiveFiles: 0, emailImports: 0, emailFindings: 0 })
   const [recent, setRecent] = useState<TimelineEvent[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -19,26 +19,29 @@ export function DashboardHome() {
     if (!supabase || !user) return
     const client = supabase
     const load = async () => {
-      const [identifiers, events, pending, matches, accepted, archiveFiles, recentEvents] = await Promise.all([
+      const [identifiers, events, pending, matches, accepted, archiveFiles, emailImports, emailFindings, recentEvents] = await Promise.all([
         client.from('identifiers').select('*', { count: 'exact', head: true }),
         client.from('timeline_events').select('*', { count: 'exact', head: true }),
         client.from('possible_matches').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         client.from('possible_matches').select('*', { count: 'exact', head: true }),
         client.from('possible_matches').select('*', { count: 'exact', head: true }).eq('status', 'accepted'),
         client.from('archive_files').select('*', { count: 'exact', head: true }),
+        client.from('email_imports').select('*', { count: 'exact', head: true }),
+        client.from('email_findings').select('*', { count: 'exact', head: true }),
         client.from('timeline_events').select('*').order('created_at', { ascending: false }).limit(5),
       ])
-      setCounts({ identifiers: identifiers.count ?? 0, events: events.count ?? 0, pending: pending.count ?? 0, matches: matches.count ?? 0, accepted: accepted.count ?? 0, archiveFiles: archiveFiles.count ?? 0 })
+      setCounts({ identifiers: identifiers.count ?? 0, events: events.count ?? 0, pending: pending.count ?? 0, matches: matches.count ?? 0, accepted: accepted.count ?? 0, archiveFiles: archiveFiles.count ?? 0, emailImports: emailImports.count ?? 0, emailFindings: emailFindings.count ?? 0 })
       setRecent((recentEvents.data ?? []) as TimelineEvent[])
       setLoading(false)
     }
     void load()
   }, [user])
 
-  const progress = reconstructionProgress({ identifiers: counts.identifiers, archiveFiles: counts.archiveFiles, matches: counts.matches }, counts.identifiers > 0)
+  const progress = reconstructionProgress({ identifiers: counts.identifiers, archiveFiles: counts.archiveFiles, matches: counts.matches, emailImports: counts.emailImports, emailFindings: counts.emailFindings }, counts.identifiers > 0)
   const cards = [
     { label: 'Identifiers', value: counts.identifiers, icon: Fingerprint, to: '/dashboard/identifiers' },
     { label: 'Timeline events', value: counts.events, icon: History, to: '/dashboard/timeline' },
+    { label: 'Email findings', value: counts.emailFindings, icon: MailSearch, to: '/dashboard/email-history' },
     { label: 'Pending matches', value: counts.pending, icon: SearchCheck, to: '/dashboard/matches' },
     { label: 'Accepted matches', value: counts.accepted, icon: ShieldCheck, to: '/dashboard/matches' },
   ]
@@ -46,7 +49,7 @@ export function DashboardHome() {
   return (
     <>
       <PageHeader eyebrow="Private workspace" title="Recovery overview" description="A calm, sourced view of the history you have chosen to reconstruct." action={<Link to="/dashboard/reconstruct" className="rounded-pill bg-ink px-6 py-3 text-body-s font-medium text-bone hover:bg-gold hover:text-ink">Start reconstruction</Link>} />
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Recovery statistics">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Recovery statistics">
         {cards.map(({ label, value, icon: Icon, to }) => <Link key={label} to={to} className="border border-ink/10 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-center justify-between"><Icon size={20} className="text-gold" /><ArrowRight size={16} className="text-ink/30" /></div><p className="mt-8 text-4xl font-semibold">{loading ? '—' : value}</p><p className="mt-1 text-body-s text-ink/55">{label}</p></Link>)}
       </section>
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.5fr]">

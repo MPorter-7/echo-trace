@@ -11,6 +11,7 @@ The existing public landing page and Supabase waitlist remain at `/`. Authentica
 - Supabase email/password signup, email verification, login, logout, reset, persistent sessions, and protected routes
 - Required self-recovery consent with a versioned audit record
 - Evidence-first reconstruction onboarding that begins with the verified signup email and keeps manual memories optional
+- Google Takeout `.mbox` analysis that streams locally in the browser, recognizes account evidence, and saves only user-selected aggregate findings
 - Private identifiers with clear separation between verified account email and unverified historical emails
 - Timeline CRUD with exact, month/year, year-only, and unknown dates; search, filters, sorting, and two views
 - User-reviewed possible matches with sources, retrieval dates, status controls, and deterministic confidence explanations
@@ -20,7 +21,7 @@ The existing public landing page and Supabase waitlist remain at `/`. Authentica
 - Individual deletion, delete-all application data, and a secure account-deletion Edge Function
 - Plain-language privacy and terms drafts marked for legal review
 - Idempotent database migration with owner-only Row Level Security
-- Unit tests for guards, validation, scoring, date conversion, deletion sequencing, migrations, export formatting, ownership assumptions, and files
+- Unit tests for guards, validation, email-history parsing, scoring, date conversion, deletion sequencing, migrations, export formatting, ownership assumptions, and files
 
 ## Safety boundary
 
@@ -55,4 +56,5 @@ See [SETUP.md](SETUP.md), [SECURITY.md](SECURITY.md), and [TESTING.md](TESTING.m
 - Facial recognition, phone lookup, or location tracking
 - Paid APIs and AI scoring
 - Background processing and approved source APIs (the connector boundary is ready for later additions)
+- Additional mailbox formats and direct inbox connections
 - Legal approval of the MVP privacy and terms drafts

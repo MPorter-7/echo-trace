@@ -35,7 +35,8 @@ describe('email-first reconstruction', () => {
   })
 
   it('counts reconstruction evidence without requiring a manual memory', () => {
-    expect(reconstructionProgress({ identifiers: 1, archiveFiles: 0, matches: 0 }, true)).toBe(25)
-    expect(reconstructionProgress({ identifiers: 2, archiveFiles: 1, matches: 1 }, true)).toBe(100)
+    expect(reconstructionProgress({ identifiers: 1, archiveFiles: 0, matches: 0, emailImports: 0, emailFindings: 0 }, true)).toBe(25)
+    expect(reconstructionProgress({ identifiers: 1, archiveFiles: 0, matches: 0, emailImports: 1, emailFindings: 2 }, true)).toBe(75)
+    expect(reconstructionProgress({ identifiers: 2, archiveFiles: 1, matches: 1, emailImports: 0, emailFindings: 0 }, true)).toBe(100)
   })
 })

@@ -1,5 +1,5 @@
-import { ArrowRight, ArrowUpRight, Check, FileUp, Fingerprint, MailCheck, SearchCheck } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { ArrowRight, Check, FileUp, Fingerprint, MailCheck, SearchCheck } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { useAuth } from '../../auth/AuthContext'
@@ -9,7 +9,7 @@ import { findStartingEmail, hasVerifiedAccountEmail, reconstructionProgress, typ
 import { supabase } from '../../lib/supabase'
 import type { Identifier } from '../../types/echo'
 
-const emptyCounts: ReconstructionCounts = { identifiers: 0, archiveFiles: 0, matches: 0 }
+const emptyCounts: ReconstructionCounts = { identifiers: 0, archiveFiles: 0, matches: 0, emailImports: 0, emailFindings: 0 }
 
 export function ReconstructionPage() {
   const { user } = useAuth()
@@ -22,10 +22,12 @@ export function ReconstructionPage() {
     const client = supabase
 
     const load = async () => {
-      const [identifierResult, archiveResult, matchResult] = await Promise.all([
+      const [identifierResult, archiveResult, matchResult, emailImportResult, emailFindingResult] = await Promise.all([
         client.from('identifiers').select('*').order('created_at', { ascending: true }),
         client.from('archive_files').select('*', { count: 'exact', head: true }),
         client.from('possible_matches').select('*', { count: 'exact', head: true }),
+        client.from('email_imports').select('*', { count: 'exact', head: true }),
+        client.from('email_findings').select('*', { count: 'exact', head: true }),
       ])
 
       let nextIdentifiers = (identifierResult.data ?? []) as Identifier[]
@@ -48,7 +50,7 @@ export function ReconstructionPage() {
         }
       }
 
-      if (identifierResult.error || archiveResult.error || matchResult.error) {
+      if (identifierResult.error || archiveResult.error || matchResult.error || emailImportResult.error || emailFindingResult.error) {
         toast.error('Your reconstruction status could not be loaded.')
       }
 
@@ -57,6 +59,8 @@ export function ReconstructionPage() {
         identifiers: nextIdentifiers.length,
         archiveFiles: archiveResult.count ?? 0,
         matches: matchResult.count ?? 0,
+        emailImports: emailImportResult.count ?? 0,
+        emailFindings: emailFindingResult.count ?? 0,
       })
       setLoading(false)
     }
@@ -66,12 +70,6 @@ export function ReconstructionPage() {
 
   const startingEmail = findStartingEmail(identifiers, user?.email)
   const progress = reconstructionProgress(counts, Boolean(startingEmail))
-  const exactSearchUrl = useMemo(() => (
-    startingEmail
-      ? `https://www.google.com/search?q=${encodeURIComponent(`"${startingEmail}"`)}`
-      : null
-  ), [startingEmail])
-
   const steps = [
     {
       title: 'Verified starting clue',
@@ -89,17 +87,17 @@ export function ReconstructionPage() {
     },
     {
       title: 'Import evidence you own',
-      description: 'Upload account exports, browser records, bookmarks, receipts, or saved messages to your private archive.',
-      complete: counts.archiveFiles > 0,
+      description: 'Start with a Google Takeout Mail export. EchoTrace analyzes it locally for account evidence you may not remember.',
+      complete: counts.archiveFiles > 0 || counts.emailImports > 0,
       icon: FileUp,
-      action: { to: '/dashboard/archive', label: 'Import private evidence' },
+      action: { to: '/dashboard/email-history', label: 'Upload email history' },
     },
     {
       title: 'Review possible matches',
       description: 'Keep the original source, inspect the score, and accept or reject every possible account yourself.',
-      complete: counts.matches > 0,
+      complete: counts.matches > 0 || counts.emailFindings > 0,
       icon: SearchCheck,
-      action: { to: '/dashboard/matches', label: 'Open match review' },
+      action: { to: counts.emailFindings > 0 ? '/dashboard/email-history' : '/dashboard/matches', label: 'Open evidence review' },
     },
   ]
 
@@ -120,12 +118,12 @@ export function ReconstructionPage() {
             <div className="flex items-center gap-3 text-body-s text-bone/55"><MailCheck size={18} className="text-gold" />Verified account email</div>
             <p className="mt-3 break-all text-xl font-medium">{loading ? 'Loading your secure clue…' : startingEmail ?? 'No verified email found'}</p>
           </div>
-          <p className="mt-5 max-w-2xl text-body-s leading-relaxed text-bone/60">An email can reveal public references, but it cannot prove every account or expose private signup records. Imports and your review provide the evidence needed for a reliable reconstruction.</p>
+          <p className="mt-5 max-w-2xl text-body-s leading-relaxed text-bone/60">Your address is the starting clue. The next step is analyzing an email export you own for signup messages, receipts, password resets, and account notices—without sending the address to a search provider.</p>
           <div className="mt-7 flex flex-wrap gap-3">
-            {exactSearchUrl && <a href={exactSearchUrl} target="_blank" rel="noreferrer" className={primaryButtonClass}>Search this email <ArrowUpRight size={16} className="ml-2" /></a>}
-            <Link to="/dashboard/archive" className="inline-flex items-center justify-center rounded-pill border border-bone/30 px-5 py-3 text-body-s font-medium text-bone hover:bg-bone hover:text-ink">Import evidence</Link>
+            <Link to="/dashboard/email-history" className={primaryButtonClass}>Upload email history <ArrowRight size={16} className="ml-2" /></Link>
+            <Link to="/dashboard/archive" className="inline-flex items-center justify-center rounded-pill border border-bone/30 px-5 py-3 text-body-s font-medium text-bone hover:bg-bone hover:text-ink">Other private evidence</Link>
           </div>
-          <p className="mt-3 text-micro text-bone/45">Public search opens only after you click and sends the exact email to the search provider.</p>
+          <p className="mt-3 text-micro text-bone/45">Raw mailbox contents stay in your browser. Only aggregate findings you select are stored.</p>
         </div>
         <div className="border border-bone/15 bg-bone/5 p-6">
           <p className="text-label uppercase text-gold">Reconstruction readiness</p>
