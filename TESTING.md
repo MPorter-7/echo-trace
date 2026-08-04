@@ -10,7 +10,7 @@ npm test
 npm run build
 ```
 
-Unit tests cover authentication redirect decisions, email-first reconstruction state, identifier and timeline validation, deterministic confidence scoring, mutually exclusive evidence, date-range conversion, partial attachment failures, storage-first deletion sequencing, URL normalization, CSV quoting, file restrictions, and the ownership rule expected by RLS.
+Unit tests cover authentication redirect decisions, email-first reconstruction state, streamed `.mbox` parsing, evidence classification, identifier and timeline validation, deterministic confidence scoring, mutually exclusive evidence, date-range conversion, partial attachment failures, storage-first deletion sequencing, URL normalization, CSV quoting, file restrictions, and the ownership rule expected by RLS.
 
 ## Manual authentication tests
 
@@ -25,24 +25,27 @@ Unit tests cover authentication redirect decisions, email-first reconstruction s
 Use two separate private browser profiles.
 
 1. Register and verify User A and User B.
-2. As User A, add one identifier, event, match, and archive file.
+2. As User A, add one identifier, event, match, archive file, email import, and email finding.
 3. Record their UUIDs from User A's network responses or Supabase Table Editor.
 4. As User B, use the browser console with User B's Supabase client to select, update, and delete those exact UUIDs.
 5. Every request must return zero accessible rows or an RLS denial. No User A content or signed file URL may be returned.
 6. Attempt to insert a row with User A's `user_id` while authenticated as User B. RLS must reject it.
 7. Repeat a direct Storage download and delete attempt against User A's object path. Both must fail.
-8. As an anonymous visitor, query every private table. All must fail or return no accessible rows.
-9. Submit the public waitlist anonymously. That insert must still succeed, while select/update/delete remain unavailable.
+8. Repeat the direct-ID attempts against User A's `email_imports` and `email_findings` rows, including an attempt to link User B's finding to User A's timeline event. Every operation must fail or return no accessible rows.
+9. As an anonymous visitor, query every private table. All must fail or return no accessible rows.
+10. Submit the public waitlist anonymously. That insert must still succeed, while select/update/delete remain unavailable.
 
 ## Feature checks
 
-- Reconstruction: confirmed signup email appears without re-entry; missing verified identifier repairs only for the authenticated email; readiness changes with identifiers, imports, and matches; public search opens only after an explicit click
+- Reconstruction: confirmed signup email appears without re-entry; missing verified identifier repairs only for the authenticated email; the primary action opens Email History Upload; readiness changes with identifiers, imports, and findings
+- Email History Upload: reject empty/non-`.mbox` files; analyze a small Google Takeout fixture; verify progress and local-only subject examples; confirm nothing is saved before selection; save selected aggregate findings; refresh; accept/reject/uncertain; add one accepted finding to the timeline; delete an import summary
+- Email History Upload privacy: use browser network tools during analysis and confirm the raw `.mbox`, message bodies, addresses, and subjects are never transmitted; confirm only selected aggregate rows reach Supabase
 - Identifiers: create, edit, duplicate prevention, delete, URL/email validation, historical email label
 - Timeline: all date precisions, required month selection, CRUD, failed archive attachment reporting, search, platform/type/confidence filters, both sorts, both views, source URL
 - Matches: guided links, case-sensitive URL path/query preservation, duplicate URL prevention, mutually exclusive scoring signals, explanations, accept/reject/uncertain, accepted date-range conversion
 - Archive: every allowed MIME type, rejected type, zero-byte and oversized files, signed download, event link, deletion
 - Export: JSON and CSV with empty and populated tables; verify quotes and Unicode
-- Deletion: individual records, delete-all history after export, profile removal, failed Storage cleanup aborting database deletion, Edge Function account deletion
+- Deletion: individual records, email-import cascade, delete-all history after export, profile removal, failed Storage cleanup aborting database deletion, Edge Function account deletion
 - Public site: landing animations, navigation, Request Access modal, permanent Supabase waitlist row
 - Responsive/accessibility: keyboard-only flow, visible focus, mobile navigation, reduced-motion preference, labels and error announcements
 

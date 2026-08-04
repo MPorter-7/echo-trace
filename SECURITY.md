@@ -31,6 +31,14 @@ Frontend validation permits JPG, PNG, WebP, GIF, PDF, TXT, JSON, and CSV files u
 
 Delete-all first verifies the caller's archive metadata can be listed and every referenced Storage object can be removed. The database reset is not called after either operation reports an error, preventing private objects from being orphaned by metadata deletion.
 
+## Email History Upload
+
+Google Takeout `.mbox` files are streamed and parsed in the authenticated user's browser. The raw file, message bodies, sender addresses, and subject lines are never uploaded to Supabase or another provider. Subject examples appear only in the temporary local review state and disappear when the page is cleared or refreshed.
+
+After local analysis, no finding is stored by default. The user must select findings explicitly. Stored records contain only import metadata plus aggregate service name, sender domain, evidence categories and counts, first/last dates, an explainable confidence estimate, and review status. `email_imports` and `email_findings` use owner-only RLS, and cross-table policies verify that linked imports and timeline events belong to the same authenticated user. Delete-all and data export include these tables.
+
+The parser caps retained header and body samples and streams the file instead of loading it all into memory. It recognizes evidence patterns; it does not assert account ownership. Forwarded messages and shared inboxes can create false positives, so every finding requires user review before it can become a timeline event.
+
 ## Account deletion
 
 Deleting application data is owner-scoped and does not need elevated credentials. Deleting a Supabase Auth user is performed only inside `supabase/functions/delete-account`, which validates the caller's JWT before using the runtime service-role secret. That secret is never bundled into the frontend.

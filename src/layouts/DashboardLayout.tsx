@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Archive, Fingerprint, LayoutDashboard, LogOut, Menu, ScanSearch, SearchCheck, Settings, Waypoints, X } from 'lucide-react'
+import { Archive, Fingerprint, LayoutDashboard, LogOut, MailSearch, Menu, ScanSearch, SearchCheck, Settings, Waypoints, X } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useAuth } from '../auth/AuthContext'
@@ -8,6 +8,7 @@ import { ConsentGate } from '../components/ConsentGate'
 const links = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/reconstruct', label: 'Start Reconstruction', icon: ScanSearch },
+  { to: '/dashboard/email-history', label: 'Email History Upload', icon: MailSearch },
   { to: '/dashboard/identifiers', label: 'My Identifiers', icon: Fingerprint },
   { to: '/dashboard/timeline', label: 'Timeline', icon: Waypoints },
   { to: '/dashboard/matches', label: 'Possible Matches', icon: SearchCheck },

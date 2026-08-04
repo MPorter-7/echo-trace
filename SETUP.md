@@ -25,11 +25,11 @@ This is a production database action. Review the SQL first and make a Supabase b
 
 1. Open **Supabase → SQL Editor → New query**.
 2. For a fresh project, run every file in `supabase/migrations` in filename order.
-3. For a project that already ran `202608030001_echotrace_mvp.sql`, run only `202608040001_review_fixes.sql`.
+3. For a project that already ran `202608030001_echotrace_mvp.sql`, run each newer migration it has not yet applied, in filename order. The Email History Upload release adds `202608040002_email_history_upload.sql`.
 4. Confirm the existing `waitlist` table and its anonymous insert policy still exist.
 5. Confirm the `private-archives` Storage bucket is marked private.
 
-The base migration creates private application tables, constraints, indexes, timestamps, owner-only RLS policies, Storage policies, a profile trigger, and a delete-my-data function. The forward repair updates that function for already-migrated projects so an application-data reset also removes the caller's profile. Both files can be rerun safely.
+The base migration creates private application tables, constraints, indexes, timestamps, owner-only RLS policies, Storage policies, a profile trigger, and a delete-my-data function. The forward migrations repair that function and add owner-isolated aggregate email-import records. The raw `.mbox` is processed locally and never placed in Storage. The migrations can be rerun safely.
 
 ## 3. Configure Supabase Authentication
 
@@ -74,5 +74,5 @@ Redeploy after saving. `vercel.json` rewrites client routes such as `/dashboard/
 3. Test login, logout, forgot password, and password reset.
 4. Accept the self-recovery consent.
 5. Complete the two-user RLS test in TESTING.md.
-6. Test identifier, timeline, match, archive, export, and deletion flows. For delete-all, simulate a failed Storage request and confirm database records remain.
+6. Test identifier, Email History Upload, timeline, match, archive, export, and deletion flows. During `.mbox` analysis, verify in browser network tools that raw email data is never sent. For delete-all, simulate a failed Storage request and confirm database records remain.
 7. Confirm `/privacy`, `/terms`, and direct dashboard URLs load on Vercel.

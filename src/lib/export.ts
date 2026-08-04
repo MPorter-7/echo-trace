@@ -1,5 +1,11 @@
 function escapeCsv(value: unknown) {
-  const text = value == null ? '' : Array.isArray(value) ? value.join('|') : String(value)
+  const text = value == null
+    ? ''
+    : Array.isArray(value)
+      ? value.join('|')
+      : typeof value === 'object'
+        ? JSON.stringify(value)
+        : String(value)
   return `"${text.replaceAll('"', '""')}"`
 }
 
