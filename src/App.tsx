@@ -12,6 +12,7 @@ const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage').th
 const AuthCallbackPage = lazy(() => import('./pages/auth/AuthCallbackPage').then((module) => ({ default: module.AuthCallbackPage })))
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout').then((module) => ({ default: module.DashboardLayout })))
 const DashboardHome = lazy(() => import('./pages/dashboard/DashboardHome').then((module) => ({ default: module.DashboardHome })))
+const ReconstructionPage = lazy(() => import('./pages/dashboard/ReconstructionPage').then((module) => ({ default: module.ReconstructionPage })))
 const IdentifiersPage = lazy(() => import('./pages/dashboard/IdentifiersPage').then((module) => ({ default: module.IdentifiersPage })))
 const TimelinePage = lazy(() => import('./pages/dashboard/TimelinePage').then((module) => ({ default: module.TimelinePage })))
 const MatchesPage = lazy(() => import('./pages/dashboard/MatchesPage').then((module) => ({ default: module.MatchesPage })))
@@ -42,6 +43,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
+              <Route path="reconstruct" element={<ReconstructionPage />} />
               <Route path="identifiers" element={<IdentifiersPage />} />
               <Route path="timeline" element={<TimelinePage />} />
               <Route path="matches" element={<MatchesPage />} />

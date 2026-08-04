@@ -5,9 +5,10 @@ import { toast } from 'sonner'
 import { useAuth } from '../../auth/AuthContext'
 import { EmptyState, Modal, PageHeader } from '../../components/DashboardUI'
 import { Field, inputClass, primaryButtonClass, secondaryButtonClass } from '../../components/FormFields'
-import { calculateConfidence, canTransitionMatch, confidenceLevel, type ConfidenceSignalInput } from '../../lib/confidence'
-import { guidedSearchConnectors, validatePublicArchiveUrl } from '../../lib/sourceConnectors'
+import { calculateConfidence, canTransitionMatch, confidenceLevel, normalizeConfidenceSignals, updateConfidenceSignal, type ConfidenceSignalInput } from '../../lib/confidence'
+import { guidedSearchConnectors, normalizePublicSourceUrl, validatePublicArchiveUrl } from '../../lib/sourceConnectors'
 import { supabase } from '../../lib/supabase'
+import { timelineDatesFromMatch } from '../../lib/timeline'
 import type { Identifier, MatchStatus, PossibleMatch } from '../../types/echo'
 
 const SIGNAL_OPTIONS: Array<{ key: keyof ConfidenceSignalInput; label: string; conflict?: boolean }> = [
@@ -77,7 +78,7 @@ export function MatchesPage() {
     setForm({
       identifierId: match.identifier_id ?? '', platform: match.platform, title: match.result_title,
       sourceUrl: match.source_url, description: match.public_description ?? '', earliestDate: match.earliest_date ?? '',
-      latestDate: match.latest_date ?? '', notes: match.user_notes ?? '', signals,
+      latestDate: match.latest_date ?? '', notes: match.user_notes ?? '', signals: normalizeConfidenceSignals(signals),
     })
     setModalOpen(true)
   }
@@ -85,15 +86,8 @@ export function MatchesPage() {
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     if (!supabase || !user) return
-    let normalizedUrl = ''
-    try {
-      const url = new URL(form.sourceUrl)
-      if (!['http:', 'https:'].includes(url.protocol)) throw new Error('protocol')
-      url.hash = ''
-      normalizedUrl = url.toString()
-    } catch {
-      return toast.error('Enter a complete public http:// or https:// source URL.')
-    }
+    const normalizedUrl = normalizePublicSourceUrl(form.sourceUrl)
+    if (!normalizedUrl) return toast.error('Enter a complete public http:// or https:// source URL.')
     if (form.earliestDate && form.latestDate && form.latestDate < form.earliestDate) return toast.error('Latest known date cannot be before earliest known date.')
     const score = calculateConfidence(form.signals)
     const payload = {
@@ -102,7 +96,7 @@ export function MatchesPage() {
       platform: form.platform.trim(),
       result_title: form.title.trim(),
       source_url: normalizedUrl,
-      normalized_source_url: normalizedUrl.toLowerCase(),
+      normalized_source_url: normalizedUrl,
       public_description: form.description.trim() || null,
       discovered_at: editing?.discovered_at ?? new Date().toISOString(),
       retrieved_at: editing?.retrieved_at ?? new Date().toISOString(),
@@ -141,12 +135,12 @@ export function MatchesPage() {
 
   const convertToTimeline = async (match: PossibleMatch) => {
     if (!supabase || !user || match.status !== 'accepted') return
+    const dates = timelineDatesFromMatch(match)
     const { error } = await supabase.from('timeline_events').insert({
       user_id: user.id,
       title: match.result_title,
       description: match.public_description,
-      date_precision: match.earliest_date ? 'exact' : 'unknown',
-      event_date: match.earliest_date,
+      ...dates,
       platform: match.platform,
       event_type: 'recovered_memory',
       source_url: match.source_url,
@@ -258,7 +252,7 @@ export function MatchesPage() {
             <div className="md:col-span-2"><Field label="Public description or snippet" htmlFor="match-description"><textarea id="match-description" rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className={inputClass} /></Field></div>
             <fieldset className="border border-ink/10 p-5 md:col-span-2">
               <legend className="px-2 text-body-s font-medium">Transparent scoring signals</legend>
-              <div className="grid gap-3 md:grid-cols-2">{SIGNAL_OPTIONS.map((signal) => <label key={signal.key} className={`flex items-center gap-3 border p-3 text-body-s ${signal.conflict ? 'border-red-100 bg-red-50/50' : 'border-emerald-100 bg-emerald-50/50'}`}><input type="checkbox" checked={Boolean(form.signals[signal.key])} onChange={(event) => setForm({ ...form, signals: { ...form.signals, [signal.key]: event.target.checked } })} className="h-4 w-4 accent-ink" />{signal.label}</label>)}</div>
+              <div className="grid gap-3 md:grid-cols-2">{SIGNAL_OPTIONS.map((signal) => <label key={signal.key} className={`flex items-center gap-3 border p-3 text-body-s ${signal.conflict ? 'border-red-100 bg-red-50/50' : 'border-emerald-100 bg-emerald-50/50'}`}><input type="checkbox" checked={Boolean(form.signals[signal.key])} onChange={(event) => setForm({ ...form, signals: updateConfidenceSignal(form.signals, signal.key, event.target.checked) })} className="h-4 w-4 accent-ink" />{signal.label}</label>)}</div>
               <p className="mt-4 text-body-s text-ink/55">Current score: <strong>{calculateConfidence(form.signals).score}% ({calculateConfidence(form.signals).level})</strong></p>
             </fieldset>
             <div className="md:col-span-2"><Field label="Private notes" htmlFor="match-notes"><textarea id="match-notes" rows={3} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} className={inputClass} /></Field></div>

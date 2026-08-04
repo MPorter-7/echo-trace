@@ -7,4 +7,5 @@ describe('archive file validation', () => {
     expect(validateArchiveFile({ name: 'large.pdf', size: 11 * 1024 * 1024, type: 'application/pdf' }).valid).toBe(false)
     expect(validateArchiveFile({ name: 'script.js', size: 100, type: 'text/javascript' }).valid).toBe(false)
   })
+  it('rejects empty files before upload', () => expect(validateArchiveFile({ name: 'empty.txt', size: 0, type: 'text/plain' }).valid).toBe(false))
 })

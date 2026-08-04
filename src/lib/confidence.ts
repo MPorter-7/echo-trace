@@ -24,6 +24,30 @@ const SIGNALS: Array<{ key: keyof ConfidenceSignalInput; weight: number; label: 
   { key: 'conflictingUserLocation', weight: -20, label: 'Conflicting user-supplied location' },
 ]
 
+const OPPOSING_SIGNALS: Partial<Record<keyof ConfidenceSignalInput, keyof ConfidenceSignalInput>> = {
+  exactUsername: 'similarUsername',
+  similarUsername: 'exactUsername',
+  matchingDisplayName: 'conflictingDisplayName',
+  conflictingDisplayName: 'matchingDisplayName',
+  matchingDateRange: 'conflictingDate',
+  conflictingDate: 'matchingDateRange',
+}
+
+export function updateConfidenceSignal(input: ConfidenceSignalInput, key: keyof ConfidenceSignalInput, checked: boolean) {
+  const next = { ...input, [key]: checked }
+  const opposing = OPPOSING_SIGNALS[key]
+  if (checked && opposing) next[opposing] = false
+  return next
+}
+
+export function normalizeConfidenceSignals(input: ConfidenceSignalInput) {
+  const normalized = { ...input }
+  if (normalized.exactUsername && normalized.similarUsername) normalized.similarUsername = false
+  if (normalized.conflictingDisplayName && normalized.matchingDisplayName) normalized.matchingDisplayName = false
+  if (normalized.conflictingDate && normalized.matchingDateRange) normalized.matchingDateRange = false
+  return normalized
+}
+
 export function confidenceLevel(score: number) {
   if (score >= 80) return 'high' as const
   if (score >= 50) return 'medium' as const
@@ -31,11 +55,12 @@ export function confidenceLevel(score: number) {
 }
 
 export function calculateConfidence(input: ConfidenceSignalInput) {
+  const normalized = normalizeConfidenceSignals(input)
   const matchingSignals: string[] = []
   const conflictingSignals: string[] = []
   let score = 10
   for (const signal of SIGNALS) {
-    if (!input[signal.key]) continue
+    if (!normalized[signal.key]) continue
     score += signal.weight
     if (signal.weight > 0) matchingSignals.push(signal.label)
     else conflictingSignals.push(signal.label)

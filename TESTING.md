@@ -10,7 +10,7 @@ npm test
 npm run build
 ```
 
-Unit tests cover authentication redirect decisions, identifier and timeline validation, deterministic confidence scoring, match transitions, CSV quoting, file restrictions, and the ownership rule expected by RLS.
+Unit tests cover authentication redirect decisions, email-first reconstruction state, identifier and timeline validation, deterministic confidence scoring, mutually exclusive evidence, date-range conversion, partial attachment failures, storage-first deletion sequencing, URL normalization, CSV quoting, file restrictions, and the ownership rule expected by RLS.
 
 ## Manual authentication tests
 
@@ -36,12 +36,13 @@ Use two separate private browser profiles.
 
 ## Feature checks
 
+- Reconstruction: confirmed signup email appears without re-entry; missing verified identifier repairs only for the authenticated email; readiness changes with identifiers, imports, and matches; public search opens only after an explicit click
 - Identifiers: create, edit, duplicate prevention, delete, URL/email validation, historical email label
-- Timeline: all date precisions, CRUD, search, platform/type/confidence filters, both sorts, both views, source URL
-- Matches: guided links, duplicate URL prevention, scoring explanations, accept/reject/uncertain, accepted-to-timeline conversion
-- Archive: every allowed MIME type, rejected type, oversized file, signed download, event link, deletion
+- Timeline: all date precisions, required month selection, CRUD, failed archive attachment reporting, search, platform/type/confidence filters, both sorts, both views, source URL
+- Matches: guided links, case-sensitive URL path/query preservation, duplicate URL prevention, mutually exclusive scoring signals, explanations, accept/reject/uncertain, accepted date-range conversion
+- Archive: every allowed MIME type, rejected type, zero-byte and oversized files, signed download, event link, deletion
 - Export: JSON and CSV with empty and populated tables; verify quotes and Unicode
-- Deletion: individual records, delete-all history after export, Edge Function account deletion
+- Deletion: individual records, delete-all history after export, profile removal, failed Storage cleanup aborting database deletion, Edge Function account deletion
 - Public site: landing animations, navigation, Request Access modal, permanent Supabase waitlist row
 - Responsive/accessibility: keyboard-only flow, visible focus, mobile navigation, reduced-motion preference, labels and error announcements
 

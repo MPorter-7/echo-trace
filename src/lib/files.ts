@@ -5,6 +5,7 @@ const ALLOWED_TYPES = new Set([
 ])
 
 export function validateArchiveFile(file: Pick<File, 'name' | 'size' | 'type'>) {
+  if (file.size < 1) return { valid: false, error: 'Choose a file that is not empty.' }
   if (file.size > MAX_FILE_SIZE) return { valid: false, error: 'Files must be 10 MB or smaller.' }
   if (!ALLOWED_TYPES.has(file.type)) return { valid: false, error: 'Use an image, PDF, TXT, JSON, or CSV file.' }
   if (!file.name.trim() || file.name.length > 180) return { valid: false, error: 'Use a shorter file name.' }

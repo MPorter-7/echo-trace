@@ -6,6 +6,13 @@ export interface ValidationResult {
   normalized?: string
 }
 
+export function validateDisplayName(rawValue: string, required = true): ValidationResult {
+  const value = rawValue.trim()
+  if (required && !value) return { valid: false, error: 'Display name is required.' }
+  if (value.length > 120) return { valid: false, error: 'Keep the display name at 120 characters or fewer.' }
+  return { valid: true, error: null, normalized: value }
+}
+
 export function validateIdentifier(type: IdentifierType, rawValue: string): ValidationResult {
   const value = rawValue.trim()
   if (!value) return { valid: false, error: 'Enter an identifier.' }
@@ -31,11 +38,12 @@ export function validateIdentifier(type: IdentifierType, rawValue: string): Vali
   return { valid: true, error: null, normalized: value }
 }
 
-export function validateTimelineEvent(input: { title: string; datePrecision: string; eventDate?: string; approximateYear?: string }) {
+export function validateTimelineEvent(input: { title: string; datePrecision: string; eventDate?: string; approximateYear?: string; approximateMonth?: string }) {
   if (!input.title.trim()) return { valid: false, error: 'Title is required.' }
   if (input.title.trim().length > 160) return { valid: false, error: 'Keep the title under 160 characters.' }
   if (input.datePrecision === 'exact' && !input.eventDate) return { valid: false, error: 'Choose the event date.' }
   if (['month', 'year'].includes(input.datePrecision) && !input.approximateYear) return { valid: false, error: 'Enter the approximate year.' }
+  if (input.datePrecision === 'month' && !input.approximateMonth) return { valid: false, error: 'Choose the approximate month.' }
   if (input.approximateYear) {
     const year = Number(input.approximateYear)
     if (!Number.isInteger(year) || year < 1900 || year > new Date().getFullYear()) return { valid: false, error: 'Enter a valid year.' }
