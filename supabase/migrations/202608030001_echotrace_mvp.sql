@@ -293,6 +293,7 @@ begin
   delete from public.possible_matches where user_id = current_user_id;
   delete from public.timeline_events where user_id = current_user_id;
   delete from public.identifiers where user_id = current_user_id;
+  delete from public.profiles where id = current_user_id;
 end;
 $$;
 revoke all on function public.delete_my_application_data() from public, anon;

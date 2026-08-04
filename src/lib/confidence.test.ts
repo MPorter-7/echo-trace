@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateConfidence, canTransitionMatch, confidenceLevel } from './confidence'
+import { calculateConfidence, canTransitionMatch, confidenceLevel, updateConfidenceSignal } from './confidence'
 
 describe('deterministic confidence scoring', () => {
   it('caps a strong score at 100 and explains its signals', () => {
@@ -9,6 +9,17 @@ describe('deterministic confidence scoring', () => {
     expect(result.matchingSignals).toContain('Exact username match')
   })
   it('subtracts conflicting evidence', () => expect(calculateConfidence({ exactUsername: true, conflictingDisplayName: true, conflictingDate: true }).score).toBe(0))
+  it('does not score mutually exclusive evidence together', () => {
+    const result = calculateConfidence({ matchingDisplayName: true, conflictingDisplayName: true })
+    expect(result.matchingSignals).not.toContain('Matching display name')
+    expect(result.conflictingSignals).toContain('Conflicting display name')
+  })
+  it('clears the opposing signal when a user changes evidence', () => {
+    expect(updateConfidenceSignal({ conflictingDisplayName: true }, 'matchingDisplayName', true)).toMatchObject({
+      matchingDisplayName: true,
+      conflictingDisplayName: false,
+    })
+  })
   it('uses documented score bands', () => {
     expect(confidenceLevel(80)).toBe('high')
     expect(confidenceLevel(50)).toBe('medium')

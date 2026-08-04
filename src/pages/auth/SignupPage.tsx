@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { AuthShell } from '../../components/AuthShell'
 import { Field, inputClass, primaryButtonClass } from '../../components/FormFields'
+import { validateDisplayName } from '../../lib/validation'
 
 export function SignupPage() {
   const { signUp, configured } = useAuth()
@@ -16,10 +17,12 @@ export function SignupPage() {
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     setError('')
+    const nameValidation = validateDisplayName(form.name)
+    if (!nameValidation.valid) return setError(nameValidation.error ?? 'Enter a valid display name.')
     if (form.password.length < 8) return setError('Use at least 8 characters for your password.')
     if (form.password !== form.confirm) return setError('The passwords do not match.')
     setSaving(true)
-    const result = await signUp(form.email.trim().toLowerCase(), form.password, form.name)
+    const result = await signUp(form.email.trim().toLowerCase(), form.password, nameValidation.normalized ?? '')
     setSaving(false)
     if (result.error) setError(result.error)
     else if (result.emailConfirmationRequired) setMessage('Check your email and use the verification link to activate your account.')
@@ -36,8 +39,8 @@ export function SignupPage() {
         </div>
       ) : (
         <form onSubmit={submit} className="space-y-5">
-          <Field label="Display name" htmlFor="name"><input id="name" required autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className={inputClass} /></Field>
-          <Field label="Email address" htmlFor="email"><input id="email" type="email" required autoComplete="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className={inputClass} /></Field>
+          <Field label="Display name" htmlFor="name" hint="120 characters maximum"><input id="name" required maxLength={120} autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className={inputClass} /></Field>
+          <Field label="Email address" htmlFor="email" hint="After verification, this automatically becomes your first private reconstruction clue."><input id="email" type="email" required autoComplete="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className={inputClass} /></Field>
           <Field label="Password" htmlFor="password" hint="At least 8 characters"><input id="password" type="password" required autoComplete="new-password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} className={inputClass} /></Field>
           <Field label="Confirm password" htmlFor="confirm"><input id="confirm" type="password" required autoComplete="new-password" value={form.confirm} onChange={(event) => setForm({ ...form, confirm: event.target.value })} className={inputClass} /></Field>
           <label className="flex gap-3 text-body-s leading-relaxed text-ink/65">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useAuth } from '../auth/AuthContext'
 import { primaryButtonClass } from './FormFields'
@@ -8,6 +9,7 @@ export const CONSENT_VERSION = '2026-08-mvp-1'
 
 export function ConsentGate({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [accepted, setAccepted] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -29,11 +31,13 @@ export function ConsentGate({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.from('user_consents').insert({
       user_id: user.id,
       consent_version: CONSENT_VERSION,
-      accepted_at: new Date().toISOString(),
     })
     setSaving(false)
     if (error) toast.error('Consent could not be saved. Apply the EchoTrace migration first.')
-    else setAccepted(true)
+    else {
+      setAccepted(true)
+      navigate('/dashboard/reconstruct', { replace: true })
+    }
   }
 
   if (loading) return <div className="grid min-h-[50vh] place-items-center text-body-s text-ink/55">Checking privacy consent…</div>

@@ -36,3 +36,14 @@ export function validatePublicArchiveUrl(value: string) {
     return null
   }
 }
+
+export function normalizePublicSourceUrl(value: string) {
+  try {
+    const url = new URL(value)
+    if (!['http:', 'https:'].includes(url.protocol)) return null
+    url.hash = ''
+    return url.toString()
+  } catch {
+    return null
+  }
+}

@@ -10,6 +10,7 @@ The existing public landing page and Supabase waitlist remain at `/`. Authentica
 
 - Supabase email/password signup, email verification, login, logout, reset, persistent sessions, and protected routes
 - Required self-recovery consent with a versioned audit record
+- Evidence-first reconstruction onboarding that begins with the verified signup email and keeps manual memories optional
 - Private identifiers with clear separation between verified account email and unverified historical emails
 - Timeline CRUD with exact, month/year, year-only, and unknown dates; search, filters, sorting, and two views
 - User-reviewed possible matches with sources, retrieval dates, status controls, and deterministic confidence explanations
@@ -19,7 +20,7 @@ The existing public landing page and Supabase waitlist remain at `/`. Authentica
 - Individual deletion, delete-all application data, and a secure account-deletion Edge Function
 - Plain-language privacy and terms drafts marked for legal review
 - Idempotent database migration with owner-only Row Level Security
-- Unit tests for guards, validation, scoring, status transitions, export formatting, ownership assumptions, and files
+- Unit tests for guards, validation, scoring, date conversion, deletion sequencing, migrations, export formatting, ownership assumptions, and files
 
 ## Safety boundary
 

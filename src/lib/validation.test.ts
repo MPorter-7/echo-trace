@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { validateIdentifier, validateTimelineEvent } from './validation'
+import { validateDisplayName, validateIdentifier, validateTimelineEvent } from './validation'
+
+describe('display name validation', () => {
+  it('enforces the database limit before signup', () => {
+    expect(validateDisplayName('A'.repeat(120)).valid).toBe(true)
+    expect(validateDisplayName('A'.repeat(121)).valid).toBe(false)
+  })
+})
 
 describe('identifier validation', () => {
   it('normalizes email identifiers', () => expect(validateIdentifier('email', '  Me@Example.COM ')).toMatchObject({ valid: true, normalized: 'me@example.com' }))
@@ -16,4 +23,8 @@ describe('timeline validation', () => {
     expect(validateTimelineEvent({ title: 'First post', datePrecision: 'exact' }).valid).toBe(false)
   })
   it('supports approximate years', () => expect(validateTimelineEvent({ title: 'Old account', datePrecision: 'year', approximateYear: '2008' }).valid).toBe(true))
+  it('requires a month for month-and-year precision', () => {
+    expect(validateTimelineEvent({ title: 'Old account', datePrecision: 'month', approximateYear: '2008' }).valid).toBe(false)
+    expect(validateTimelineEvent({ title: 'Old account', datePrecision: 'month', approximateYear: '2008', approximateMonth: '6' }).valid).toBe(true)
+  })
 })
