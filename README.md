@@ -1,73 +1,57 @@
-# React + TypeScript + Vite
+# EchoTrace
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+EchoTrace is a privacy-first self-recovery workspace for reconstructing your own digital history from information you provide and traceable public sources.
 
-Currently, two official plugins are available:
+> Recover, reconstruct, and reclaim your lost online history — free, ethical, and transparent.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The existing public landing page and Supabase waitlist remain at `/`. Authenticated users receive a private dashboard at `/dashboard`.
 
-## React Compiler
+## MVP features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Supabase email/password signup, email verification, login, logout, reset, persistent sessions, and protected routes
+- Required self-recovery consent with a versioned audit record
+- Private identifiers with clear separation between verified account email and unverified historical emails
+- Timeline CRUD with exact, month/year, year-only, and unknown dates; search, filters, sorting, and two views
+- User-reviewed possible matches with sources, retrieval dates, status controls, and deterministic confidence explanations
+- Guided outbound public searches without uncontrolled scraping
+- Private Supabase Storage archive with owner paths, validation, signed downloads, deletion, and event linking
+- JSON and CSV data exports
+- Individual deletion, delete-all application data, and a secure account-deletion Edge Function
+- Plain-language privacy and terms drafts marked for legal review
+- Idempotent database migration with owner-only Row Level Security
+- Unit tests for guards, validation, scoring, status transitions, export formatting, ownership assumptions, and files
 
-## Expanding the ESLint configuration
+## Safety boundary
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+EchoTrace is not a people-search, surveillance, background-check, stalking, or private-investigation product. It does not add facial recognition, location tracking, phone investigation, private-database access, automated scraping, paywall/CAPTCHA bypass, or paid APIs.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Local development
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm ci
+cp .env.example .env.local
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Add only the public Supabase project URL and anonymous key to `.env.local`. Never use a service-role key in the frontend.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Verification
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
 ```
+
+See [SETUP.md](SETUP.md), [SECURITY.md](SECURITY.md), and [TESTING.md](TESTING.md) before deployment.
+
+## Intentionally deferred
+
+- Automatic discovery or scraping
+- Data-broker or private-database integrations
+- Social login
+- Facial recognition, phone lookup, or location tracking
+- Paid APIs and AI scoring
+- Background processing and approved source APIs (the connector boundary is ready for later additions)
+- Legal approval of the MVP privacy and terms drafts

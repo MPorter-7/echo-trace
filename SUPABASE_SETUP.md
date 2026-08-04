@@ -1,4 +1,4 @@
-# EchoTrace permanent waitlist setup
+# EchoTrace permanent waitlist setup (legacy public page)
 
 The site works without Supabase and stores signups in the current browser. Complete these steps to store signups permanently.
 
@@ -20,3 +20,4 @@ The site works without Supabase and stores signups in the current browser. Compl
 
 New submissions will appear in **Table Editor > waitlist**. Public visitors may insert an email but cannot read, update, or delete the list.
 
+For the authenticated MVP, follow `SETUP.md`. The MVP migration intentionally preserves this waitlist and policy.
