@@ -1,4 +1,4 @@
-import { ArrowRight, Check, FileUp, Fingerprint, MailCheck, SearchCheck } from 'lucide-react'
+import { ArrowRight, Check, Fingerprint, MailCheck, SearchCheck, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
@@ -86,11 +86,11 @@ export function ReconstructionPage() {
       action: { to: '/dashboard/identifiers', label: 'Add an old email or username' },
     },
     {
-      title: 'Import evidence you own',
-      description: 'Start with a Google Takeout Mail export. EchoTrace analyzes it locally for account evidence you may not remember.',
+      title: 'Scan your Gmail',
+      description: 'Connect once with read-only access. EchoTrace checks likely account emails, then disconnects automatically.',
       complete: counts.archiveFiles > 0 || counts.emailImports > 0,
-      icon: FileUp,
-      action: { to: '/dashboard/email-history', label: 'Upload email history' },
+      icon: Zap,
+      action: { to: '/dashboard/email-history', label: 'Find my accounts' },
     },
     {
       title: 'Review possible matches',
@@ -118,12 +118,12 @@ export function ReconstructionPage() {
             <div className="flex items-center gap-3 text-body-s text-bone/55"><MailCheck size={18} className="text-gold" />Verified account email</div>
             <p className="mt-3 break-all text-xl font-medium">{loading ? 'Loading your secure clue…' : startingEmail ?? 'No verified email found'}</p>
           </div>
-          <p className="mt-5 max-w-2xl text-body-s leading-relaxed text-bone/60">Your address is the starting clue. The next step is analyzing an email export you own for signup messages, receipts, password resets, and account notices—without sending the address to a search provider.</p>
+          <p className="mt-5 max-w-2xl text-body-s leading-relaxed text-bone/60">Your address is the starting clue. Connect Gmail once and EchoTrace will check for signup messages, receipts, password resets, and account notices you may not remember.</p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Link to="/dashboard/email-history" className={primaryButtonClass}>Upload email history <ArrowRight size={16} className="ml-2" /></Link>
+            <Link to="/dashboard/email-history" className={primaryButtonClass}>Find my accounts <ArrowRight size={16} className="ml-2" /></Link>
             <Link to="/dashboard/archive" className="inline-flex items-center justify-center rounded-pill border border-bone/30 px-5 py-3 text-body-s font-medium text-bone hover:bg-bone hover:text-ink">Other private evidence</Link>
           </div>
-          <p className="mt-3 text-micro text-bone/45">Raw mailbox contents stay in your browser. Only aggregate findings you select are stored.</p>
+          <p className="mt-3 text-micro text-bone/45">Gmail access is read-only and temporary. Only summaries you select are stored.</p>
         </div>
         <div className="border border-bone/15 bg-bone/5 p-6">
           <p className="text-label uppercase text-gold">Reconstruction readiness</p>
