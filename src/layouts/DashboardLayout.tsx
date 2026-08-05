@@ -8,7 +8,7 @@ import { ConsentGate } from '../components/ConsentGate'
 const links = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/reconstruct', label: 'Start Reconstruction', icon: ScanSearch },
-  { to: '/dashboard/email-history', label: 'Email History Upload', icon: MailSearch },
+  { to: '/dashboard/email-history', label: 'Find My Accounts', icon: MailSearch },
   { to: '/dashboard/identifiers', label: 'My Identifiers', icon: Fingerprint },
   { to: '/dashboard/timeline', label: 'Timeline', icon: Waypoints },
   { to: '/dashboard/matches', label: 'Possible Matches', icon: SearchCheck },

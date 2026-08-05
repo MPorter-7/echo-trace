@@ -11,7 +11,7 @@ The existing public landing page and Supabase waitlist remain at `/`. Authentica
 - Supabase email/password signup, email verification, login, logout, reset, persistent sessions, and protected routes
 - Required self-recovery consent with a versioned audit record
 - Evidence-first reconstruction onboarding that begins with the verified signup email and keeps manual memories optional
-- Google Takeout `.mbox` analysis that streams locally in the browser, recognizes account evidence, and saves only user-selected aggregate findings
+- One-click, temporary read-only Gmail scan plus an advanced Google Takeout `.mbox` fallback; both save only user-selected aggregate findings
 - Private identifiers with clear separation between verified account email and unverified historical emails
 - Timeline CRUD with exact, month/year, year-only, and unknown dates; search, filters, sorting, and two views
 - User-reviewed possible matches with sources, retrieval dates, status controls, and deterministic confidence explanations
@@ -35,7 +35,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Add only the public Supabase project URL and anonymous key to `.env.local`. Never use a service-role key in the frontend.
+Add only the public Supabase project URL, anonymous key, and Google OAuth web-client ID to `.env.local`. Never use a service-role key or Google client secret in the frontend.
 
 ## Verification
 
@@ -56,5 +56,5 @@ See [SETUP.md](SETUP.md), [SECURITY.md](SECURITY.md), and [TESTING.md](TESTING.m
 - Facial recognition, phone lookup, or location tracking
 - Paid APIs and AI scoring
 - Background processing and approved source APIs (the connector boundary is ready for later additions)
-- Additional mailbox formats and direct inbox connections
+- Additional mailbox providers and formats
 - Legal approval of the MVP privacy and terms drafts

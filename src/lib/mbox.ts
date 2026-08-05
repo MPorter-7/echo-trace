@@ -21,7 +21,7 @@ export interface EmailHistoryAnalysis {
   findings: EmailHistoryFindingDraft[]
 }
 
-interface ParsedMessage {
+export interface ParsedEmailMessage {
   from: string
   subject: string
   date: string
@@ -138,7 +138,7 @@ function chooseServiceName(displayName: string, domain: string) {
   return cleaned && cleaned.length >= 2 && cleaned.length <= 80 ? cleaned : serviceNameFromDomain(domain)
 }
 
-function classifyMessage(message: ParsedMessage) {
+function classifyMessage(message: ParsedEmailMessage) {
   const searchable = `${message.subject}\n${message.bodySample.slice(0, MAX_BODY_SAMPLE_CHARS)}`
   return EMAIL_EVIDENCE_KINDS.filter((kind) => evidencePatterns[kind].some((pattern) => pattern.test(searchable)))
 }
@@ -199,34 +199,7 @@ export class MboxAnalyzer {
     }
   }
 
-  finish() {
-    if (this.started) this.finishMessage()
-    const findings = [...this.findings.values()].map((finding): EmailHistoryFindingDraft => {
-      const scored = scoreFinding(finding)
-      return {
-        serviceName: finding.serviceName,
-        senderDomain: finding.senderDomain,
-        evidenceTypes: EMAIL_EVIDENCE_KINDS.filter((kind) => finding.evidenceCounts[kind] > 0),
-        evidenceCounts: finding.evidenceCounts,
-        firstSeen: finding.firstSeen,
-        lastSeen: finding.lastSeen,
-        messageCount: finding.messageCount,
-        confidenceScore: scored.score,
-        confidenceExplanation: scored.explanation,
-        sampleSubjects: finding.sampleSubjects,
-      }
-    }).sort((a, b) => b.confidenceScore - a.confidenceScore || b.messageCount - a.messageCount || a.serviceName.localeCompare(b.serviceName))
-    return { messagesScanned: this.messagesScanned, candidateMessages: this.candidateMessages, findings }
-  }
-
-  private finishMessage() {
-    const headers = parseHeaders(this.currentHeaders)
-    const message: ParsedMessage = {
-      from: headers.get('from') ?? '',
-      subject: headers.get('subject') ?? '',
-      date: headers.get('date') ?? '',
-      bodySample: this.currentBody,
-    }
+  addMessage(message: ParsedEmailMessage) {
     this.messagesScanned += 1
     const kinds = classifyMessage(message)
     const sender = extractSender(message.from)
@@ -250,6 +223,37 @@ export class MboxAnalyzer {
     const subject = message.subject.slice(0, 160).trim()
     if (subject && finding.sampleSubjects.length < 3 && !finding.sampleSubjects.includes(subject)) finding.sampleSubjects.push(subject)
     this.findings.set(sender.domain, finding)
+  }
+
+  finish() {
+    if (this.started) this.finishMessage()
+    const findings = [...this.findings.values()].map((finding): EmailHistoryFindingDraft => {
+      const scored = scoreFinding(finding)
+      return {
+        serviceName: finding.serviceName,
+        senderDomain: finding.senderDomain,
+        evidenceTypes: EMAIL_EVIDENCE_KINDS.filter((kind) => finding.evidenceCounts[kind] > 0),
+        evidenceCounts: finding.evidenceCounts,
+        firstSeen: finding.firstSeen,
+        lastSeen: finding.lastSeen,
+        messageCount: finding.messageCount,
+        confidenceScore: scored.score,
+        confidenceExplanation: scored.explanation,
+        sampleSubjects: finding.sampleSubjects,
+      }
+    }).sort((a, b) => b.confidenceScore - a.confidenceScore || b.messageCount - a.messageCount || a.serviceName.localeCompare(b.serviceName))
+    return { messagesScanned: this.messagesScanned, candidateMessages: this.candidateMessages, findings }
+  }
+
+  private finishMessage() {
+    const headers = parseHeaders(this.currentHeaders)
+    const message: ParsedEmailMessage = {
+      from: headers.get('from') ?? '',
+      subject: headers.get('subject') ?? '',
+      date: headers.get('date') ?? '',
+      bodySample: this.currentBody,
+    }
+    this.addMessage(message)
   }
 }
 

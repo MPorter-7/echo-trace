@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 
 const privacySections = [
   ['What EchoTrace does', 'EchoTrace helps you organize information you provide about your own digital history, plus public sources you choose to save. It is not a people-search, surveillance, background-check, or private-investigation service.'],
-  ['Information stored', 'We store your account details, consent record, identifiers, timeline events, possible matches, email-import summaries you select, scoring explanations, notes, activity metadata, and private archive files. Raw mailbox files, message bodies, addresses, and subject lines analyzed by Email History Upload remain in your browser and are not stored by EchoTrace.'],
+  ['Information stored', 'We store your account details, consent record, identifiers, timeline events, possible matches, email-history summaries you select, scoring explanations, notes, activity metadata, and private archive files. Raw mailbox files and Gmail message content, addresses, and subject lines analyzed during recovery are not stored by EchoTrace.'],
   ['How information is used', 'Information is used only to provide your private recovery workspace, protect the service, and support exports and deletion. EchoTrace does not sell personal data or send private identifiers to third parties.'],
   ['Security and access', 'Private database tables use user-owner Row Level Security. Archive objects use private storage paths scoped to the authenticated user. No service-role key is included in browser code.'],
   ['Your choices', 'You can choose which locally analyzed email findings to save, correct records, accept or reject findings and possible matches, export JSON or CSV, delete individual records and files, delete all application data, or request permanent account deletion.'],
@@ -10,7 +10,7 @@ const privacySections = [
 ]
 const termsSections = [
   ['Permitted use', 'You may use EchoTrace only to reconstruct digital history that belongs to you. You must have the right to upload each private file and save each identifier.'],
-  ['Email-history analysis', 'You may analyze only your own mailbox as part of reconstructing your own digital history. EchoTrace processes supported .mbox files locally and saves only the aggregate findings you select.'],
+  ['Email-history analysis', 'You may analyze only a mailbox you control as part of reconstructing your own digital history. Quick Gmail Scan uses temporary read-only permission and disconnects after the scan. Supported .mbox files remain a local advanced option. EchoTrace saves only the aggregate findings you select.'],
   ['Prohibited use', 'Do not use EchoTrace for surveillance, harassment, stalking, doxxing, employment or tenant screening, background checks, private investigation, arbitrary people-search, or research about another person without their informed authorization.'],
   ['Public-source rules', 'Do not bypass authentication, paywalls, CAPTCHAs, robots.txt, access controls, or platform restrictions. Follow website terms and applicable law. Guided searches are user-directed outbound links, not automated scraping.'],
   ['Result accuracy', 'EchoTrace does not guarantee that a public result belongs to you. Keep original sources, review conflicts, correct mistakes, and treat confidence as an estimate.'],

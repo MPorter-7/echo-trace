@@ -76,6 +76,7 @@ export interface EmailImport {
   user_id: string
   original_name: string
   size_bytes: number
+  source_kind: 'gmail' | 'mbox'
   messages_scanned: number
   candidate_messages: number
   findings_count: number
