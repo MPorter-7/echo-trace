@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MboxAnalyzer, decodeEmailHeader, validateMboxFile } from './mbox'
+import { MAX_RECOMMENDED_FINDINGS, MboxAnalyzer, decodeEmailHeader, validateMboxFile } from './mbox'
 
 function analyze(text: string, splitAt?: number) {
   const parser = new MboxAnalyzer()
@@ -49,6 +49,8 @@ describe('Google Takeout mbox analysis', () => {
       messageCount: 2,
     })
     expect(result.findings[0].evidenceTypes).toEqual(expect.arrayContaining(['account_signup', 'email_verification', 'receipt']))
+    expect(result.findings[0]).toMatchObject({ recommended: true })
+    expect(result.findings[0].confidenceScore).toBeGreaterThanOrEqual(80)
     expect(result).toMatchObject({ findingsBeforeCleanup: 1, duplicatesMerged: 0, findingsFiltered: 0 })
   })
 
@@ -111,6 +113,108 @@ Subject: Your second order confirmation
 Thank you for your purchase.
 `)
     expect(result.findings.map(({ senderDomain }) => senderDomain)).toEqual(expect.arrayContaining(['service.test', 'shop.test']))
+    expect(result.findings.find(({ senderDomain }) => senderDomain === 'service.test')).toMatchObject({ recommended: false })
+  })
+
+  it('does not select one-off verification mail as a high-confidence account', () => {
+    const result = analyze(`From verify Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Accounts <accounts@one-off.test>
+Subject: Verify your email
+
+Activate your account.
+`)
+    expect(result.findings[0]).toMatchObject({ senderDomain: 'one-off.test', recommended: false })
+    expect(result.findings[0].confidenceScore).toBeLessThan(70)
+  })
+
+  it('does not auto-select a one-off password reset without corroboration', () => {
+    const result = analyze(`From reset Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Accounts <accounts@one-reset.test>
+Subject: Reset your password
+
+Use the password reset link.
+`)
+    expect(result.findings[0]).toMatchObject({ senderDomain: 'one-reset.test', recommended: false })
+  })
+
+  it('caps automatic selection while preserving additional evidence as unselected possibilities', () => {
+    const messages = Array.from({ length: MAX_RECOMMENDED_FINDINGS + 10 }, (_, index) => `From verify-${index}-1 Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Accounts <accounts@service-${index}.test>
+Subject: Verify your email
+
+Confirm your account.
+From verify-${index}-2 Wed Feb 02 00:00:00 2022
+Date: Wed, 2 Feb 2022 00:00:00 +0000
+From: Accounts <accounts@service-${index}.test>
+Subject: Email verification
+
+Confirm your account.
+`).join('')
+    const result = analyze(messages)
+    expect(result.findings).toHaveLength(MAX_RECOMMENDED_FINDINGS + 10)
+    expect(result.findings.filter(({ recommended }) => recommended)).toHaveLength(MAX_RECOMMENDED_FINDINGS)
+    expect(result.findings.filter(({ recommended }) => !recommended)).toHaveLength(10)
+  })
+
+  it('removes mailing-list confirmations unless direct security evidence corroborates an account', () => {
+    const result = analyze(`From newsletter Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Newsletter <news@mailer.test>
+Subject: Confirm your email
+List-Id: Weekly offers <offers.mailer.test>
+List-Unsubscribe: <https://mailer.test/unsubscribe>
+Precedence: bulk
+
+Welcome to this week's newsletter. Verify your email to keep receiving offers.
+`)
+    expect(result.findings).toHaveLength(0)
+    expect(result.findingsFiltered).toBe(1)
+  })
+
+  it('rejects the exact scam, newsletter, and forwarded-subject patterns from the 708-result scan', () => {
+    const result = analyze(`From cash Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Cash Setup <notice@webtraffictoolkit.com>
+Subject: Please Activate Your EMAIL-CASH Setup
+
+Welcome to your payout. Verify your email and activate your cash account.
+From delivery Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Delivery <notice@sattape.com>
+Subject: Confirm your email and locate your card
+
+Verify your delivery now.
+From forwarded Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Forwarder <notice@aura.com>
+Subject: Re: WELCOME TO WELLS FARGO BANK
+
+Please confirm your email.
+From newsletter Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Local newsletter <notice@ccsend.com>
+Subject: Pothole bandits, reading parties, and regional theater
+List-Unsubscribe: <https://ccsend.com/unsubscribe>
+
+Welcome to the newsletter. Confirm your email subscription.
+From security1 Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: T-Mobile <notice@t-mobile.com>
+Subject: T-Mobile ID verification code
+
+Use this code to verify your account.
+From security2 Wed Feb 02 00:00:00 2022
+Date: Wed, 2 Feb 2022 00:00:00 +0000
+From: T-Mobile <notice@t-mobile.com>
+Subject: Your T-Mobile verification code
+
+Use this code to sign in.
+`)
+    expect(result.findings).toHaveLength(1)
+    expect(result.findings[0]).toMatchObject({ senderDomain: 't-mobile.com', recommended: true })
   })
 
   it('does not turn mail from a personal mailbox provider into an account finding', () => {
@@ -157,6 +261,30 @@ Subject: Password reset requested — new sign-in alert
 Review your account.
 `)
     expect(result.findings[0].evidenceTypes).toEqual(expect.arrayContaining(['password_reset', 'account_notice']))
+  })
+
+  it('recognizes account password-reset subjects without treating password-reset articles as account evidence', () => {
+    const result = analyze(`From reset1 Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Microsoft <no-reply@microsoft.com>
+Subject: Personal Microsoft account password reset
+
+Use the link to reset your password.
+From reset2 Wed Feb 02 00:00:00 2022
+Date: Wed, 2 Feb 2022 00:00:00 +0000
+From: Microsoft <no-reply@microsoft.com>
+Subject: Microsoft account password reset
+
+Use the link to reset your password.
+From article Thu Feb 03 00:00:00 2022
+Date: Thu, 3 Feb 2022 00:00:00 +0000
+From: Malwarebytes <news@malwarebytes.com>
+Subject: About those Instagram password reset emails...
+
+Read our latest security article.
+`)
+    expect(result.findings).toHaveLength(1)
+    expect(result.findings[0]).toMatchObject({ senderDomain: 'microsoft.com', recommended: true })
   })
 
   it('decodes common RFC 2047 encoded subjects', () => {

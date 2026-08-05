@@ -1,4 +1,5 @@
 export const EMAIL_EVIDENCE_KINDS = ['account_signup', 'email_verification', 'password_reset', 'receipt', 'account_notice'] as const
+export const MAX_RECOMMENDED_FINDINGS = 50
 
 export type EmailEvidenceKind = typeof EMAIL_EVIDENCE_KINDS[number]
 
@@ -12,6 +13,7 @@ export interface EmailHistoryFindingDraft {
   messageCount: number
   confidenceScore: number
   confidenceExplanation: string
+  recommended: boolean
   sampleSubjects: string[]
 }
 
@@ -29,17 +31,22 @@ export interface ParsedEmailMessage {
   subject: string
   date: string
   bodySample: string
+  listId?: string
+  listUnsubscribe?: string
+  precedence?: string
 }
 
 interface MutableFinding {
   serviceName: string
   senderDomain: string
   evidenceCounts: Record<EmailEvidenceKind, number>
+  subjectEvidenceCounts: Record<EmailEvidenceKind, number>
   firstSeen: string | null
   lastSeen: string | null
   messageCount: number
   sampleSubjects: string[]
   spamMessageCount: number
+  bulkMessageCount: number
 }
 
 const MAX_HEADER_CHARS = 32 * 1024
@@ -63,6 +70,9 @@ const SPAM_PATTERNS = [
   /\b(?:winner|won)\b.{0,40}\b(?:cash|lottery|prize|reward|sweepstakes)\b/i,
   /\b(?:free money|guaranteed income|make money fast)\b/i,
   /\b(?:loan|debt)\b.{0,30}\b(?:approved|forgiven|relief offer)\b/i,
+  /\b(?:activate|confirm|verify)\b.{0,35}\b(?:cash|e-?payments?|paydays?|payouts?|spins?|slots?)\b/i,
+  /\b(?:cash|e-?payments?|paydays?|payouts?|spins?|slots?)\b.{0,35}\b(?:activate|approved|confirm|verify|welcome)\b/i,
+  /\b(?:confirm|verify)\b.{0,30}\b(?:delivery|locate your card)\b/i,
 ]
 
 const evidencePatterns: Record<EmailEvidenceKind, RegExp[]> = {
@@ -73,11 +83,15 @@ const evidencePatterns: Record<EmailEvidenceKind, RegExp[]> = {
     /\bgetting started with\b/i,
   ],
   email_verification: [
-    /\b(?:verify|confirm|activate) (?:your )?(?:email|e-mail|email address|account|registration)\b/i,
+    /\b(?:verify|confirm|activate) (?:your )?(?:email(?: address)?|e-mail(?: address)?|account|registration)(?![-\w])/i,
     /\b(?:email|e-mail|account|registration) (?:verification|confirmation|activation)\b/i,
   ],
   password_reset: [
-    /\b(?:password reset|reset your password|forgot(?:ten)? your password|change your password)\b/i,
+    /\b(?:reset|change) your password\b/i,
+    /\b(?:your )?password (?:reset|change) (?:request(?:ed)?|instructions?|link|code|successful|complete|confirmation)\b/i,
+    /\bpassword reset\s*[.!—:;-]*$/i,
+    /\bforgot password (?:request|instructions?)\b/i,
+    /\bforgot(?:ten)? your password\b/i,
     /\byour password (?:was|has been) changed\b/i,
   ],
   receipt: [
@@ -167,14 +181,27 @@ function isLikelySpamMessage(message: ParsedEmailMessage) {
   return SPAM_PATTERNS.some((pattern) => pattern.test(searchable))
 }
 
+function isBulkMessage(message: ParsedEmailMessage) {
+  return Boolean(message.listId?.trim() || message.listUnsubscribe?.trim() || /\b(?:bulk|junk|list)\b/i.test(message.precedence ?? ''))
+}
+
 function isSuspiciousDomain(domain: string) {
   const brand = domain.split('.')[0] ?? ''
   const digits = [...brand].filter((character) => /\d/.test(character)).length
   return domain.includes('xn--') || brand.length > 38 || (brand.length >= 10 && digits / brand.length >= 0.4) || (brand.match(/-/g)?.length ?? 0) >= 4
 }
+function classifyText(value: string) {
+  return EMAIL_EVIDENCE_KINDS.filter((kind) => evidencePatterns[kind].some((pattern) => pattern.test(value)))
+}
+
 function classifyMessage(message: ParsedEmailMessage) {
-  const searchable = `${message.subject}\n${message.bodySample.slice(0, MAX_BODY_SAMPLE_CHARS)}`
-  return EMAIL_EVIDENCE_KINDS.filter((kind) => evidencePatterns[kind].some((pattern) => pattern.test(searchable)))
+  if (/^(?:\s*(?:re|fw|fwd)\s*:)+/i.test(message.subject)) return { kinds: [] as EmailEvidenceKind[], subjectKinds: [] as EmailEvidenceKind[] }
+  const subjectKinds = classifyText(message.subject)
+  const bodyKinds = classifyText(message.bodySample.slice(0, MAX_BODY_SAMPLE_CHARS))
+  return {
+    kinds: EMAIL_EVIDENCE_KINDS.filter((kind) => subjectKinds.includes(kind) || bodyKinds.includes(kind)),
+    subjectKinds,
+  }
 }
 
 function dateOnly(value: string) {
@@ -186,26 +213,48 @@ function dateOnly(value: string) {
   return parsed.toISOString().slice(0, 10)
 }
 
-function scoreFinding(finding: MutableFinding) {
+function isRecommendedFinding(finding: MutableFinding) {
+  const subject = finding.subjectEvidenceCounts
+  const directEvidenceCount = subject.account_signup + subject.email_verification + subject.password_reset + subject.account_notice
+  const spamRatio = finding.messageCount ? finding.spamMessageCount / finding.messageCount : 0
+  const bulkRatio = finding.messageCount ? finding.bulkMessageCount / finding.messageCount : 0
+  if (finding.messageCount < 2 || directEvidenceCount < 2 || spamRatio >= 0.25 || bulkRatio >= 0.5) return false
+  if (subject.password_reset >= 1) return true
+  if (subject.account_notice >= 2) return true
+  if (subject.account_notice >= 1 && subject.email_verification + subject.account_signup >= 1) return true
+  if (subject.email_verification >= 2 && finding.messageCount >= 2) return true
+  return subject.email_verification >= 1 && subject.account_signup >= 1 && finding.messageCount >= 2
+}
+
+function scoreFinding(finding: MutableFinding, recommended: boolean) {
   const kinds = EMAIL_EVIDENCE_KINDS.filter((kind) => finding.evidenceCounts[kind] > 0)
-  let score = 45 + Math.min(15, 5 + Math.floor(Math.log2(Math.max(1, finding.messageCount))) * 3)
-  if (finding.evidenceCounts.account_signup > 0) score += 25
-  if (finding.evidenceCounts.email_verification > 0) score += 25
-  if (finding.evidenceCounts.password_reset > 0) score += 20
-  if (finding.evidenceCounts.account_notice > 0) score += 8
-  if (finding.evidenceCounts.receipt > 0) score += 4
-  if (kinds.length > 1) score += 5
+  const subject = finding.subjectEvidenceCounts
+  const subjectKinds = EMAIL_EVIDENCE_KINDS.filter((kind) => subject[kind] > 0)
+  let score = 35 + Math.min(18, Math.floor(Math.log2(finding.messageCount + 1)) * 6)
+  if (subject.password_reset > 0) score += 24
+  if (subject.account_notice > 0) score += 18
+  if (subject.email_verification > 0) score += 16
+  if (subject.account_signup > 0) score += 8
+  if (subject.receipt > 0) score += 3
+  if (subjectKinds.length > 1) score += 5
   if (finding.spamMessageCount > 0) score -= Math.min(35, finding.spamMessageCount * 12)
-  score = Math.max(0, Math.min(95, score))
+  if (finding.bulkMessageCount > 0) score -= Math.min(25, finding.bulkMessageCount * 5)
+  score = recommended ? Math.max(80, Math.min(95, score)) : Math.max(0, Math.min(69, score))
   const labels = kinds.map((kind) => evidenceLabels[kind])
-  const explanation = `${finding.messageCount} message${finding.messageCount === 1 ? '' : 's'} from ${finding.senderDomain} contained ${labels.join(', ')} evidence. Related sender subdomains were combined and weak or spam-like results were removed before this was shown.`
+  const explanation = recommended
+    ? `${finding.messageCount} message${finding.messageCount === 1 ? '' : 's'} from ${finding.senderDomain} contained corroborated ${labels.join(', ')} evidence. Related sender subdomains were combined and mailing-list or spam-like signals were excluded.`
+    : `${finding.messageCount} message${finding.messageCount === 1 ? '' : 's'} from ${finding.senderDomain} contained possible ${labels.join(', ')} evidence, but not enough direct corroboration to select it automatically.`
   return { score, explanation }
 }
 
 function mergeFinding(target: MutableFinding, source: MutableFinding) {
   target.messageCount += source.messageCount
   target.spamMessageCount += source.spamMessageCount
-  for (const kind of EMAIL_EVIDENCE_KINDS) target.evidenceCounts[kind] += source.evidenceCounts[kind]
+  target.bulkMessageCount += source.bulkMessageCount
+  for (const kind of EMAIL_EVIDENCE_KINDS) {
+    target.evidenceCounts[kind] += source.evidenceCounts[kind]
+    target.subjectEvidenceCounts[kind] += source.subjectEvidenceCounts[kind]
+  }
   if (source.firstSeen && (!target.firstSeen || source.firstSeen < target.firstSeen)) target.firstSeen = source.firstSeen
   if (source.lastSeen && (!target.lastSeen || source.lastSeen > target.lastSeen)) target.lastSeen = source.lastSeen
   for (const subject of source.sampleSubjects) {
@@ -217,9 +266,13 @@ function mergeFinding(target: MutableFinding, source: MutableFinding) {
 function shouldKeepFinding(finding: MutableFinding) {
   if (CONSUMER_MAIL_DOMAINS.has(finding.senderDomain) || DELIVERY_INFRASTRUCTURE_DOMAINS.has(finding.senderDomain)) return false
   const strongEvidenceCount = finding.evidenceCounts.account_signup + finding.evidenceCounts.email_verification + finding.evidenceCounts.password_reset
+  const directStrongEvidenceCount = finding.subjectEvidenceCounts.account_signup + finding.subjectEvidenceCounts.email_verification + finding.subjectEvidenceCounts.password_reset + finding.subjectEvidenceCounts.account_notice
   const spamRatio = finding.messageCount ? finding.spamMessageCount / finding.messageCount : 0
+  const bulkRatio = finding.messageCount ? finding.bulkMessageCount / finding.messageCount : 0
   if (spamRatio >= 0.5) return false
-  if (isSuspiciousDomain(finding.senderDomain) && strongEvidenceCount === 0) return false
+  if (bulkRatio >= 0.5 && finding.subjectEvidenceCounts.password_reset + finding.subjectEvidenceCounts.account_notice === 0) return false
+  if (isSuspiciousDomain(finding.senderDomain) && directStrongEvidenceCount === 0) return false
+  if (directStrongEvidenceCount > 0) return true
   if (strongEvidenceCount > 0) return true
   if (finding.evidenceCounts.account_notice >= 2 && finding.messageCount >= 2) return true
   return finding.evidenceCounts.receipt >= 2 && finding.messageCount >= 2
@@ -262,7 +315,7 @@ export class MboxAnalyzer {
 
   addMessage(message: ParsedEmailMessage) {
     this.messagesScanned += 1
-    const kinds = classifyMessage(message)
+    const { kinds, subjectKinds } = classifyMessage(message)
     const sender = extractSender(message.from)
     if (!kinds.length || !sender) return
 
@@ -272,15 +325,19 @@ export class MboxAnalyzer {
       serviceName: serviceNameFromDomain(sender.domain),
       senderDomain: sender.domain,
       evidenceCounts: emptyEvidenceCounts(),
+      subjectEvidenceCounts: emptyEvidenceCounts(),
       firstSeen: null,
       lastSeen: null,
       messageCount: 0,
       sampleSubjects: [],
       spamMessageCount: 0,
+      bulkMessageCount: 0,
     }
     finding.messageCount += 1
     if (isLikelySpamMessage(message)) finding.spamMessageCount += 1
+    if (isBulkMessage(message)) finding.bulkMessageCount += 1
     for (const kind of kinds) finding.evidenceCounts[kind] += 1
+    for (const kind of subjectKinds) finding.subjectEvidenceCounts[kind] += 1
     if (seen && (!finding.firstSeen || seen < finding.firstSeen)) finding.firstSeen = seen
     if (seen && (!finding.lastSeen || seen > finding.lastSeen)) finding.lastSeen = seen
     const subject = message.subject.slice(0, 160).trim()
@@ -301,12 +358,14 @@ export class MboxAnalyzer {
         serviceName: serviceNameFromDomain(senderDomain),
         senderDomain,
         evidenceCounts: { ...finding.evidenceCounts },
+        subjectEvidenceCounts: { ...finding.subjectEvidenceCounts },
         sampleSubjects: [...finding.sampleSubjects],
       })
     }
     const keptFindings = [...mergedFindings.values()].filter(shouldKeepFinding)
-    const findings = keptFindings.map((finding): EmailHistoryFindingDraft => {
-      const scored = scoreFinding(finding)
+    const scoredFindings = keptFindings.map((finding): EmailHistoryFindingDraft => {
+      const recommended = isRecommendedFinding(finding)
+      const scored = scoreFinding(finding, recommended)
       return {
         serviceName: finding.serviceName,
         senderDomain: finding.senderDomain,
@@ -317,9 +376,22 @@ export class MboxAnalyzer {
         messageCount: finding.messageCount,
         confidenceScore: scored.score,
         confidenceExplanation: scored.explanation,
+        recommended,
         sampleSubjects: finding.sampleSubjects,
       }
-    }).sort((a, b) => b.confidenceScore - a.confidenceScore || b.messageCount - a.messageCount || a.serviceName.localeCompare(b.serviceName))
+    }).sort((a, b) => Number(b.recommended) - Number(a.recommended) || b.confidenceScore - a.confidenceScore || b.messageCount - a.messageCount || a.serviceName.localeCompare(b.serviceName))
+    let recommendationsKept = 0
+    const findings = scoredFindings.map((finding) => {
+      if (!finding.recommended) return finding
+      recommendationsKept += 1
+      if (recommendationsKept <= MAX_RECOMMENDED_FINDINGS) return finding
+      return {
+        ...finding,
+        recommended: false,
+        confidenceScore: 69,
+        confidenceExplanation: `${finding.messageCount} messages from ${finding.senderDomain} contained account evidence, but this result was held back to keep automatic selection focused on the strongest ${MAX_RECOMMENDED_FINDINGS} accounts.`,
+      }
+    })
     return {
       messagesScanned: this.messagesScanned,
       candidateMessages: this.candidateMessages,
@@ -337,6 +409,9 @@ export class MboxAnalyzer {
       subject: headers.get('subject') ?? '',
       date: headers.get('date') ?? '',
       bodySample: this.currentBody,
+      listId: headers.get('list-id') ?? '',
+      listUnsubscribe: headers.get('list-unsubscribe') ?? '',
+      precedence: headers.get('precedence') ?? '',
     }
     this.addMessage(message)
   }

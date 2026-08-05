@@ -14,7 +14,10 @@ describe('Quick Gmail Scan', () => {
     expect(GMAIL_EVIDENCE_QUERY).toContain('-in:trash')
     expect(GMAIL_EVIDENCE_QUERY).toContain('-in:sent')
     expect(GMAIL_EVIDENCE_QUERY).toContain('-in:drafts')
+    expect(GMAIL_EVIDENCE_QUERY).toContain('-category:promotions')
+    expect(GMAIL_EVIDENCE_QUERY).toContain('subject:"verify your email"')
     expect(GMAIL_EVIDENCE_QUERY).not.toContain('in:anywhere')
+    expect(GMAIL_EVIDENCE_QUERY).not.toContain('"welcome to"')
     expect(GMAIL_EVIDENCE_QUERY).not.toMatch(/\breceipt\b|\binvoice\b/i)
   })
 
@@ -42,6 +45,19 @@ describe('Quick Gmail Scan', () => {
       firstSeen: '2021-01-02',
     })
     expect(result.findings[0].evidenceTypes).toEqual(expect.arrayContaining(['account_signup', 'email_verification']))
+  })
+
+  it('carries Gmail mailing-list headers into local cleanup without storing message content', () => {
+    const parsed = parseGmailMessage({
+      payload: {
+        headers: [
+          { name: 'List-Id', value: 'Example list <example.test>' },
+          { name: 'List-Unsubscribe', value: '<https://example.com/unsubscribe>' },
+          { name: 'Precedence', value: 'bulk' },
+        ],
+      },
+    })
+    expect(parsed).toMatchObject({ listId: 'Example list <example.test>', listUnsubscribe: '<https://example.com/unsubscribe>', precedence: 'bulk' })
   })
 
   it('uses readable text from HTML-only account messages', () => {
