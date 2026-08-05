@@ -19,6 +19,9 @@ export interface EmailHistoryAnalysis {
   messagesScanned: number
   candidateMessages: number
   findings: EmailHistoryFindingDraft[]
+  findingsBeforeCleanup: number
+  duplicatesMerged: number
+  findingsFiltered: number
 }
 
 export interface ParsedEmailMessage {
@@ -36,11 +39,31 @@ interface MutableFinding {
   lastSeen: string | null
   messageCount: number
   sampleSubjects: string[]
+  spamMessageCount: number
 }
 
 const MAX_HEADER_CHARS = 32 * 1024
 const MAX_BODY_SAMPLE_CHARS = 24 * 1024
 const MAX_PENDING_LINE_CHARS = 256 * 1024
+
+const COMPOUND_PUBLIC_SUFFIXES = new Set(['co.jp', 'co.nz', 'co.uk', 'com.au', 'com.br', 'com.mx'])
+
+const CONSUMER_MAIL_DOMAINS = new Set(['aol.com', 'gmail.com', 'gmx.com', 'googlemail.com', 'hotmail.com', 'icloud.com', 'mail.com', 'outlook.com', 'proton.me', 'protonmail.com', 'yahoo.com'])
+
+const DELIVERY_INFRASTRUCTURE_DOMAINS = new Set(['amazonses.com', 'campaign-archive.com', 'constantcontact.com', 'customer.io', 'mailchimpapp.net', 'mailgun.org', 'sendgrid.net', 'sparkpostmail.com'])
+
+const CANONICAL_DOMAIN_ALIASES = new Map([
+  ['facebookmail.com', 'facebook.com'],
+  ['twitter.com', 'x.com'],
+])
+
+const SPAM_PATTERNS = [
+  /\b(?:casino|jackpot|lottery|sweepstakes)\b/i,
+  /\b(?:claim|collect|redeem)\b.{0,40}\b(?:cash|gift card|prize|reward|bonus)\b/i,
+  /\b(?:winner|won)\b.{0,40}\b(?:cash|lottery|prize|reward|sweepstakes)\b/i,
+  /\b(?:free money|guaranteed income|make money fast)\b/i,
+  /\b(?:loan|debt)\b.{0,30}\b(?:approved|forgiven|relief offer)\b/i,
+]
 
 const evidencePatterns: Record<EmailEvidenceKind, RegExp[]> = {
   account_signup: [
@@ -122,22 +145,33 @@ function extractSender(from: string) {
   return { domain, displayName }
 }
 
+function registrableDomain(domain: string) {
+  const normalized = domain.toLowerCase().replace(/^www\./, '').replace(/\.+$/, '')
+  const parts = normalized.split('.').filter(Boolean)
+  if (parts.length <= 2) return CANONICAL_DOMAIN_ALIASES.get(normalized) ?? normalized
+  const suffixLength = COMPOUND_PUBLIC_SUFFIXES.has(parts.slice(-2).join('.')) ? 2 : 1
+  const root = parts.slice(-(suffixLength + 1)).join('.')
+  return CANONICAL_DOMAIN_ALIASES.get(root) ?? root
+}
+
 function serviceNameFromDomain(domain: string) {
   const parts = domain.split('.').filter(Boolean)
-  const compoundSuffix = parts.length >= 3 && ['co.uk', 'com.au', 'co.nz', 'co.jp', 'com.br'].includes(parts.slice(-2).join('.'))
+  const compoundSuffix = parts.length >= 3 && COMPOUND_PUBLIC_SUFFIXES.has(parts.slice(-2).join('.'))
   const brand = parts.at(compoundSuffix ? -3 : -2) ?? parts[0] ?? domain
+  if (brand.toLowerCase() === 'x') return 'X'
   return brand.split(/[-_]/).filter(Boolean).map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(' ')
 }
 
-function chooseServiceName(displayName: string, domain: string) {
-  const cleaned = displayName
-    .replace(/\b(?:no[- ]?reply|do not reply|notifications?|support|accounts?|security|billing|receipts?|team)\b/gi, ' ')
-    .replace(/[^\p{L}\p{N}&.+ -]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return cleaned && cleaned.length >= 2 && cleaned.length <= 80 ? cleaned : serviceNameFromDomain(domain)
+function isLikelySpamMessage(message: ParsedEmailMessage) {
+  const searchable = `${message.subject}\n${message.bodySample.slice(0, 2_000)}`
+  return SPAM_PATTERNS.some((pattern) => pattern.test(searchable))
 }
 
+function isSuspiciousDomain(domain: string) {
+  const brand = domain.split('.')[0] ?? ''
+  const digits = [...brand].filter((character) => /\d/.test(character)).length
+  return domain.includes('xn--') || brand.length > 38 || (brand.length >= 10 && digits / brand.length >= 0.4) || (brand.match(/-/g)?.length ?? 0) >= 4
+}
 function classifyMessage(message: ParsedEmailMessage) {
   const searchable = `${message.subject}\n${message.bodySample.slice(0, MAX_BODY_SAMPLE_CHARS)}`
   return EMAIL_EVIDENCE_KINDS.filter((kind) => evidencePatterns[kind].some((pattern) => pattern.test(searchable)))
@@ -154,14 +188,41 @@ function dateOnly(value: string) {
 
 function scoreFinding(finding: MutableFinding) {
   const kinds = EMAIL_EVIDENCE_KINDS.filter((kind) => finding.evidenceCounts[kind] > 0)
-  let score = 40 + Math.min(20, finding.messageCount * 4)
-  if (finding.evidenceCounts.account_signup > 0) score += 15
-  if (finding.evidenceCounts.email_verification > 0) score += 10
+  let score = 45 + Math.min(15, 5 + Math.floor(Math.log2(Math.max(1, finding.messageCount))) * 3)
+  if (finding.evidenceCounts.account_signup > 0) score += 25
+  if (finding.evidenceCounts.email_verification > 0) score += 25
+  if (finding.evidenceCounts.password_reset > 0) score += 20
+  if (finding.evidenceCounts.account_notice > 0) score += 8
+  if (finding.evidenceCounts.receipt > 0) score += 4
   if (kinds.length > 1) score += 5
-  score = Math.min(90, score)
+  if (finding.spamMessageCount > 0) score -= Math.min(35, finding.spamMessageCount * 12)
+  score = Math.max(0, Math.min(95, score))
   const labels = kinds.map((kind) => evidenceLabels[kind])
-  const explanation = `${finding.messageCount} message${finding.messageCount === 1 ? '' : 's'} from ${finding.senderDomain} contained ${labels.join(', ')} evidence. This suggests a service relationship, but forwarded mail and shared inboxes are possible, so you must review it.`
+  const explanation = `${finding.messageCount} message${finding.messageCount === 1 ? '' : 's'} from ${finding.senderDomain} contained ${labels.join(', ')} evidence. Related sender subdomains were combined and weak or spam-like results were removed before this was shown.`
   return { score, explanation }
+}
+
+function mergeFinding(target: MutableFinding, source: MutableFinding) {
+  target.messageCount += source.messageCount
+  target.spamMessageCount += source.spamMessageCount
+  for (const kind of EMAIL_EVIDENCE_KINDS) target.evidenceCounts[kind] += source.evidenceCounts[kind]
+  if (source.firstSeen && (!target.firstSeen || source.firstSeen < target.firstSeen)) target.firstSeen = source.firstSeen
+  if (source.lastSeen && (!target.lastSeen || source.lastSeen > target.lastSeen)) target.lastSeen = source.lastSeen
+  for (const subject of source.sampleSubjects) {
+    if (target.sampleSubjects.length >= 3) break
+    if (!target.sampleSubjects.includes(subject)) target.sampleSubjects.push(subject)
+  }
+}
+
+function shouldKeepFinding(finding: MutableFinding) {
+  if (CONSUMER_MAIL_DOMAINS.has(finding.senderDomain) || DELIVERY_INFRASTRUCTURE_DOMAINS.has(finding.senderDomain)) return false
+  const strongEvidenceCount = finding.evidenceCounts.account_signup + finding.evidenceCounts.email_verification + finding.evidenceCounts.password_reset
+  const spamRatio = finding.messageCount ? finding.spamMessageCount / finding.messageCount : 0
+  if (spamRatio >= 0.5) return false
+  if (isSuspiciousDomain(finding.senderDomain) && strongEvidenceCount === 0) return false
+  if (strongEvidenceCount > 0) return true
+  if (finding.evidenceCounts.account_notice >= 2 && finding.messageCount >= 2) return true
+  return finding.evidenceCounts.receipt >= 2 && finding.messageCount >= 2
 }
 
 export function formatEmailEvidenceKind(kind: EmailEvidenceKind) {
@@ -208,15 +269,17 @@ export class MboxAnalyzer {
     this.candidateMessages += 1
     const seen = dateOnly(message.date)
     const finding = this.findings.get(sender.domain) ?? {
-      serviceName: chooseServiceName(sender.displayName, sender.domain),
+      serviceName: serviceNameFromDomain(sender.domain),
       senderDomain: sender.domain,
       evidenceCounts: emptyEvidenceCounts(),
       firstSeen: null,
       lastSeen: null,
       messageCount: 0,
       sampleSubjects: [],
+      spamMessageCount: 0,
     }
     finding.messageCount += 1
+    if (isLikelySpamMessage(message)) finding.spamMessageCount += 1
     for (const kind of kinds) finding.evidenceCounts[kind] += 1
     if (seen && (!finding.firstSeen || seen < finding.firstSeen)) finding.firstSeen = seen
     if (seen && (!finding.lastSeen || seen > finding.lastSeen)) finding.lastSeen = seen
@@ -227,7 +290,22 @@ export class MboxAnalyzer {
 
   finish() {
     if (this.started) this.finishMessage()
-    const findings = [...this.findings.values()].map((finding): EmailHistoryFindingDraft => {
+    const findingsBeforeCleanup = this.findings.size
+    const mergedFindings = new Map<string, MutableFinding>()
+    for (const finding of this.findings.values()) {
+      const senderDomain = registrableDomain(finding.senderDomain)
+      const existing = mergedFindings.get(senderDomain)
+      if (existing) mergeFinding(existing, finding)
+      else mergedFindings.set(senderDomain, {
+        ...finding,
+        serviceName: serviceNameFromDomain(senderDomain),
+        senderDomain,
+        evidenceCounts: { ...finding.evidenceCounts },
+        sampleSubjects: [...finding.sampleSubjects],
+      })
+    }
+    const keptFindings = [...mergedFindings.values()].filter(shouldKeepFinding)
+    const findings = keptFindings.map((finding): EmailHistoryFindingDraft => {
       const scored = scoreFinding(finding)
       return {
         serviceName: finding.serviceName,
@@ -242,7 +320,14 @@ export class MboxAnalyzer {
         sampleSubjects: finding.sampleSubjects,
       }
     }).sort((a, b) => b.confidenceScore - a.confidenceScore || b.messageCount - a.messageCount || a.serviceName.localeCompare(b.serviceName))
-    return { messagesScanned: this.messagesScanned, candidateMessages: this.candidateMessages, findings }
+    return {
+      messagesScanned: this.messagesScanned,
+      candidateMessages: this.candidateMessages,
+      findings,
+      findingsBeforeCleanup,
+      duplicatesMerged: findingsBeforeCleanup - mergedFindings.size,
+      findingsFiltered: mergedFindings.size - keptFindings.length,
+    }
   }
 
   private finishMessage() {

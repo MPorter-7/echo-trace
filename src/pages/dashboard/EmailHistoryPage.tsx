@@ -81,7 +81,9 @@ export function EmailHistoryPage() {
       const result = await analyzeMboxFile(file, setProgress)
       setAnalysis(result)
       setAnalysisSource({ name: file.name, sizeBytes: file.size, kind: 'mbox' })
-      if (result.findings.length) toast.success(`Found ${result.findings.length} service${result.findings.length === 1 ? '' : 's'} for you to review.`)
+      setSelectedDomains(new Set(result.findings.map(({ senderDomain }) => senderDomain)))
+      if (result.findings.length) toast.success(`Found ${result.findings.length} likely account${result.findings.length === 1 ? '' : 's'} after automatic cleanup.`)
+      else if (result.findingsFiltered > 0) toast.info('Automatic cleanup removed every weak or spam-like result. Nothing was saved.')
       else toast.info('No account evidence was recognized in this file. Nothing was uploaded or saved.')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'The mailbox could not be analyzed.')
@@ -104,9 +106,12 @@ export function EmailHistoryPage() {
       })
       setAnalysis(result.analysis)
       setAnalysisSource({ name: `Gmail quick scan — ${result.emailAddress}`.slice(0, 180), sizeBytes: 0, kind: 'gmail' })
+      setSelectedDomains(new Set(result.analysis.findings.map(({ senderDomain }) => senderDomain)))
       if (result.analysis.findings.length) {
-        toast.success(`Found ${result.analysis.findings.length} service${result.analysis.findings.length === 1 ? '' : 's'} for you to review.`)
+        toast.success(`Found ${result.analysis.findings.length} likely account${result.analysis.findings.length === 1 ? '' : 's'} after automatic cleanup.`)
         if (result.reachedLimit) toast.info('Quick Scan reached its 5,000-message safety limit. You can still review and save these findings.')
+      } else if (result.analysis.findingsFiltered > 0) {
+        toast.info('Automatic cleanup removed every weak or spam-like result. Nothing was saved.')
       } else {
         toast.info('No recognizable account evidence was found. Nothing was saved.')
       }
@@ -239,7 +244,7 @@ export function EmailHistoryPage() {
       <PageHeader
         eyebrow="Private evidence recovery"
         title="Find my accounts"
-        description="Connect Gmail once. EchoTrace checks for account signups, verifications, password resets, receipts, and notices you may not remember."
+        description="Connect Gmail once. EchoTrace checks high-signal account emails, removes spam-like results, and combines duplicate service senders automatically."
       />
 
       <section className="border border-ink/10 bg-charcoal p-7 text-bone lg:p-10">
@@ -247,7 +252,7 @@ export function EmailHistoryPage() {
           <div>
             <p className="flex items-center gap-2 text-label uppercase text-gold"><Zap size={15} />Fastest option</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">Scan Gmail in one step</h2>
-            <p className="mt-4 max-w-2xl text-body-s leading-relaxed text-bone/65">Click once, choose your Google account, and approve read-only access. EchoTrace checks likely account emails and then disconnects automatically.</p>
+            <p className="mt-4 max-w-2xl text-body-s leading-relaxed text-bone/65">Click once, choose your Google account, and approve read-only access. EchoTrace checks high-signal account emails, cleans the results, and then disconnects automatically.</p>
             <button type="button" onClick={() => void scanGmail()} disabled={analyzing || !googleClientId || !gmailReady} className={`${primaryButtonClass} mt-7`}>
               <MailCheck size={18} className="mr-2" />
               {analyzing ? 'Scanning Gmail…' : googleClientId && !gmailReady ? 'Preparing Gmail…' : 'Connect Gmail & scan'}
@@ -256,7 +261,7 @@ export function EmailHistoryPage() {
           </div>
           <div className="border border-emerald-400/25 bg-emerald-400/10 p-5 text-body-s text-emerald-100">
             <p className="flex items-center gap-2 font-medium"><LockKeyhole size={18} />Private by design</p>
-            <p className="mt-3 leading-relaxed text-emerald-100/70">Access is read-only and temporary. Raw emails, addresses, and subjects are not saved by EchoTrace. You review the findings before saving any summary.</p>
+            <p className="mt-3 leading-relaxed text-emerald-100/70">Access is read-only and temporary. Raw emails, addresses, and subjects are not saved by EchoTrace. Only the cleaned account list is shown, and nothing is saved until you approve it.</p>
           </div>
         </div>
         {analyzing && <div className="mt-7" aria-live="polite"><div className="flex justify-between text-micro uppercase text-bone/50"><span>{progressLabel}</span><span>{progress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-bone/10"><div className="h-full bg-gold transition-all" style={{ width: `${progress}%` }} /></div></div>}
@@ -288,9 +293,10 @@ export function EmailHistoryPage() {
       {analysis && (
         <section className="mt-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div><p className="text-label uppercase text-gold">Private analysis complete</p><h2 className="mt-2 text-2xl font-semibold">Review before anything is saved</h2><p className="mt-2 text-body-s text-ink/55">Checked {analysis.messagesScanned.toLocaleString()} likely messages; {analysis.candidateMessages.toLocaleString()} contained recognizable account evidence.</p></div>
-            {analysis.findings.length > 0 && <button type="button" onClick={() => setSelectedDomains(selectedDomains.size === analysis.findings.length ? new Set() : new Set(analysis.findings.map(({ senderDomain }) => senderDomain)))} className={secondaryButtonClass}>{selectedDomains.size === analysis.findings.length ? 'Clear selection' : 'Select all findings'}</button>}
+            <div><p className="text-label uppercase text-gold">Private analysis complete</p><h2 className="mt-2 text-2xl font-semibold">Likely accounts found</h2><p className="mt-2 text-body-s text-ink/55">Checked {analysis.messagesScanned.toLocaleString()} likely messages; {analysis.candidateMessages.toLocaleString()} contained recognizable account evidence.</p></div>
+            {analysis.findings.length > 0 && <button type="button" onClick={() => setSelectedDomains(selectedDomains.size === analysis.findings.length ? new Set() : new Set(analysis.findings.map(({ senderDomain }) => senderDomain)))} className={secondaryButtonClass}>{selectedDomains.size === analysis.findings.length ? 'Clear selection' : 'Select likely accounts'}</button>}
           </div>
+          {(analysis.duplicatesMerged > 0 || analysis.findingsFiltered > 0) && <div className="mt-5 flex items-start gap-3 border border-emerald-200 bg-emerald-50 p-4 text-body-s text-emerald-900"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>Automatic cleanup merged {analysis.duplicatesMerged.toLocaleString()} duplicate sender{analysis.duplicatesMerged === 1 ? '' : 's'} and removed {analysis.findingsFiltered.toLocaleString()} weak or spam-like result{analysis.findingsFiltered === 1 ? '' : 's'}. The likely accounts below are selected for you; uncheck anything you do not recognize.</p></div>}
           {analysis.findings.length ? <div className="mt-5 grid gap-4 lg:grid-cols-2">{analysis.findings.map((finding) => (
             <label key={finding.senderDomain} className={`cursor-pointer border bg-white p-6 transition ${selectedDomains.has(finding.senderDomain) ? 'border-gold ring-1 ring-gold' : 'border-ink/10'}`}>
               <div className="flex items-start gap-4"><input type="checkbox" checked={selectedDomains.has(finding.senderDomain)} onChange={() => toggleFinding(finding.senderDomain)} className="mt-1 h-4 w-4 accent-ink" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="text-xl font-semibold">{finding.serviceName}</h3><span className="rounded-full bg-mist px-3 py-1 text-micro uppercase">{finding.confidenceScore}% {confidenceLevel(finding.confidenceScore)}</span></div><p className="mt-1 text-body-s text-ink/45">{finding.senderDomain} · {finding.messageCount} relevant message{finding.messageCount === 1 ? '' : 's'}</p></div></div>
@@ -298,8 +304,8 @@ export function EmailHistoryPage() {
               <p className="mt-4 text-body-s text-ink/55">{formatDate(finding.firstSeen)}{finding.lastSeen && finding.lastSeen !== finding.firstSeen ? ` – ${formatDate(finding.lastSeen)}` : ''}</p>
               {finding.sampleSubjects.length > 0 && <div className="mt-4 border-l-2 border-gold pl-4"><p className="text-micro uppercase text-ink/40">Local-only examples</p>{finding.sampleSubjects.map((subject) => <p key={subject} className="mt-1 truncate text-body-s text-ink/60">{subject}</p>)}</div>}
             </label>
-          ))}</div> : <EmptyState title="No account evidence recognized" description="Nothing was saved. Try another Gmail account or use the advanced email-export option." />}
-          {analysis.findings.length > 0 && <div className="mt-6 flex flex-col items-start justify-between gap-4 border border-ink/10 bg-white p-5 md:flex-row md:items-center"><p className="text-body-s text-ink/55">{selectedDomains.size} of {analysis.findings.length} findings selected. Subject examples shown above never leave this page.</p><button type="button" onClick={() => void saveSelected()} disabled={saving || selectedDomains.size === 0} className={primaryButtonClass}><ShieldCheck size={17} className="mr-2" />{saving ? 'Saving privately…' : 'Save selected for review'}</button></div>}
+          ))}</div> : <EmptyState title={analysis.findingsFiltered > 0 ? 'No likely accounts after cleanup' : 'No account evidence recognized'} description={analysis.findingsFiltered > 0 ? `EchoTrace removed ${analysis.findingsFiltered.toLocaleString()} weak or spam-like result${analysis.findingsFiltered === 1 ? '' : 's'}. Nothing was saved.` : 'Nothing was saved. Try another Gmail account or use the advanced email-export option.'} />}
+          {analysis.findings.length > 0 && <div className="mt-6 flex flex-col items-start justify-between gap-4 border border-ink/10 bg-white p-5 md:flex-row md:items-center"><p className="text-body-s text-ink/55">{selectedDomains.size} of {analysis.findings.length} likely accounts selected. Subject examples shown above never leave this page.</p><button type="button" onClick={() => void saveSelected()} disabled={saving || selectedDomains.size === 0} className={primaryButtonClass}><ShieldCheck size={17} className="mr-2" />{saving ? 'Saving privately…' : 'Save likely accounts for review'}</button></div>}
         </section>
       )}
 

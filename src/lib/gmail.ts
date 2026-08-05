@@ -5,7 +5,7 @@ export const GMAIL_QUICK_SCAN_LIMIT = 5000
 
 const GMAIL_API_ROOT = 'https://gmail.googleapis.com/gmail/v1/users/me'
 const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client'
-const GMAIL_EVIDENCE_QUERY = 'in:anywhere {"welcome to" "verify your email" "confirm your email" "activate your account" "account created" "registration complete" "password reset" "reset your password" receipt invoice "order confirmation" "payment confirmation" "security alert" "account notice" "new sign-in" "new login" "verification code"}'
+export const GMAIL_EVIDENCE_QUERY = '-in:spam -in:trash -in:sent -in:drafts {"welcome to" "verify your email" "confirm your email" "activate your account" "account created" "registration complete" "password reset" "reset your password" "security alert" "account notice" "new sign-in" "new login" "verification code"}'
 const BODY_SAMPLE_LIMIT = 24 * 1024
 const FETCH_CONCURRENCY = 8
 

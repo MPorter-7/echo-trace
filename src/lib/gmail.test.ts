@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MboxAnalyzer } from './mbox'
-import { GMAIL_QUICK_SCAN_LIMIT, GMAIL_READONLY_SCOPE, parseGmailMessage } from './gmail'
+import { GMAIL_EVIDENCE_QUERY, GMAIL_QUICK_SCAN_LIMIT, GMAIL_READONLY_SCOPE, parseGmailMessage } from './gmail'
 
 function encode(value: string) {
   return btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -10,6 +10,12 @@ describe('Quick Gmail Scan', () => {
   it('requests only read-only Gmail access and caps quick scans', () => {
     expect(GMAIL_READONLY_SCOPE).toBe('https://www.googleapis.com/auth/gmail.readonly')
     expect(GMAIL_QUICK_SCAN_LIMIT).toBe(5000)
+    expect(GMAIL_EVIDENCE_QUERY).toContain('-in:spam')
+    expect(GMAIL_EVIDENCE_QUERY).toContain('-in:trash')
+    expect(GMAIL_EVIDENCE_QUERY).toContain('-in:sent')
+    expect(GMAIL_EVIDENCE_QUERY).toContain('-in:drafts')
+    expect(GMAIL_EVIDENCE_QUERY).not.toContain('in:anywhere')
+    expect(GMAIL_EVIDENCE_QUERY).not.toMatch(/\breceipt\b|\binvoice\b/i)
   })
 
   it('converts Gmail API messages into the existing local evidence analyzer', () => {
