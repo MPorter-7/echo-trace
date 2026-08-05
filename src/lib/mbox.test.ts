@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_RECOMMENDED_FINDINGS, MboxAnalyzer, decodeEmailHeader, validateMboxFile } from './mbox'
+import { AUTO_SELECT_CONFIDENCE_THRESHOLD, MAX_RECOMMENDED_FINDINGS, MboxAnalyzer, decodeEmailHeader, shouldAutoSelectFinding, validateMboxFile } from './mbox'
 
 function analyze(text: string, splitAt?: number) {
   const parser = new MboxAnalyzer()
@@ -14,6 +14,16 @@ function analyze(text: string, splitAt?: number) {
   if (pending) parser.addLine(pending)
   return parser.finish()
 }
+
+describe('automatic finding selection', () => {
+  it('selects only corroborated findings above 80% confidence', () => {
+    expect(AUTO_SELECT_CONFIDENCE_THRESHOLD).toBe(80)
+    expect(shouldAutoSelectFinding({ recommended: true, confidenceScore: 81 })).toBe(true)
+    expect(shouldAutoSelectFinding({ recommended: true, confidenceScore: 80 })).toBe(false)
+    expect(shouldAutoSelectFinding({ recommended: true, confidenceScore: 79 })).toBe(false)
+    expect(shouldAutoSelectFinding({ recommended: false, confidenceScore: 95 })).toBe(false)
+  })
+})
 
 const mailbox = `From sender@example.com Sat Jan 02 03:04:05 2021
 Date: Sat, 2 Jan 2021 03:04:05 +0000

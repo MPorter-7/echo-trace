@@ -7,7 +7,7 @@ import { EmptyState, PageHeader } from '../../components/DashboardUI'
 import { primaryButtonClass, secondaryButtonClass } from '../../components/FormFields'
 import { canTransitionMatch, confidenceLevel } from '../../lib/confidence'
 import { loadGoogleIdentityServices, scanGmailOnce } from '../../lib/gmail'
-import { analyzeMboxFile, formatEmailEvidenceKind, validateMboxFile, type EmailEvidenceKind, type EmailHistoryAnalysis, type EmailHistoryFindingDraft } from '../../lib/mbox'
+import { analyzeMboxFile, formatEmailEvidenceKind, shouldAutoSelectFinding, validateMboxFile, type EmailEvidenceKind, type EmailHistoryAnalysis, type EmailHistoryFindingDraft } from '../../lib/mbox'
 import { supabase } from '../../lib/supabase'
 import type { EmailFinding, EmailImport, MatchStatus } from '../../types/echo'
 
@@ -64,6 +64,7 @@ export function EmailHistoryPage() {
 
   const importNames = useMemo(() => new Map(imports.map((item) => [item.id, item.original_name])), [imports])
   const recommendedFindings = useMemo(() => analysis?.findings.filter(({ recommended }) => recommended) ?? [], [analysis])
+  const autoSelectedFindings = useMemo(() => recommendedFindings.filter(shouldAutoSelectFinding), [recommendedFindings])
   const possibleFindings = useMemo(() => analysis?.findings.filter(({ recommended }) => !recommended) ?? [], [analysis])
 
   const analyze = async (event: FormEvent) => {
@@ -84,9 +85,11 @@ export function EmailHistoryPage() {
       setAnalysis(result)
       setAnalysisSource({ name: file.name, sizeBytes: file.size, kind: 'mbox' })
       const recommended = result.findings.filter((finding) => finding.recommended)
+      const autoSelected = recommended.filter(shouldAutoSelectFinding)
       const possible = result.findings.length - recommended.length
-      setSelectedDomains(new Set(recommended.map(({ senderDomain }) => senderDomain)))
-      if (recommended.length) toast.success(`Found ${recommended.length} corroborated account${recommended.length === 1 ? '' : 's'} after automatic cleanup.`)
+      setSelectedDomains(new Set(autoSelected.map(({ senderDomain }) => senderDomain)))
+      if (autoSelected.length) toast.success(`Selected ${autoSelected.length} strong account${autoSelected.length === 1 ? '' : 's'} above 80% confidence after automatic cleanup.`)
+      else if (recommended.length) toast.info(`Found ${recommended.length} borderline account signal${recommended.length === 1 ? '' : 's'}, but none exceeded 80% confidence. Nothing was selected.`)
       else if (possible > 0) toast.info(`No corroborated accounts were found. ${possible} lower-confidence signal${possible === 1 ? ' was' : 's were'} held back.`)
       else if (result.findingsFiltered > 0) toast.info('Automatic cleanup removed every weak or spam-like result. Nothing was saved.')
       else toast.info('No account evidence was recognized in this file. Nothing was uploaded or saved.')
@@ -112,12 +115,15 @@ export function EmailHistoryPage() {
       setAnalysis(result.analysis)
       setAnalysisSource({ name: `Gmail quick scan — ${result.emailAddress}`.slice(0, 180), sizeBytes: 0, kind: 'gmail' })
       const recommended = result.analysis.findings.filter((finding) => finding.recommended)
+      const autoSelected = recommended.filter(shouldAutoSelectFinding)
       const possible = result.analysis.findings.length - recommended.length
-      setSelectedDomains(new Set(recommended.map(({ senderDomain }) => senderDomain)))
-      if (recommended.length) {
-        toast.success(`Found ${recommended.length} corroborated account${recommended.length === 1 ? '' : 's'} after automatic cleanup.`)
+      setSelectedDomains(new Set(autoSelected.map(({ senderDomain }) => senderDomain)))
+      if (autoSelected.length) {
+        toast.success(`Selected ${autoSelected.length} strong account${autoSelected.length === 1 ? '' : 's'} above 80% confidence after automatic cleanup.`)
         if (possible > 0) toast.info(`${possible} lower-confidence signal${possible === 1 ? ' was' : 's were'} held back and left unselected.`)
         if (result.reachedLimit) toast.info('Quick Scan reached its 5,000-message safety limit. You can still review and save these findings.')
+      } else if (recommended.length) {
+        toast.info(`Found ${recommended.length} borderline account signal${recommended.length === 1 ? '' : 's'}, but none exceeded 80% confidence. Nothing was selected.`)
       } else if (possible > 0) {
         toast.info(`No corroborated accounts were found. ${possible} lower-confidence signal${possible === 1 ? ' was' : 's were'} held back.`)
       } else if (result.analysis.findingsFiltered > 0) {
@@ -140,7 +146,6 @@ export function EmailHistoryPage() {
       return next
     })
   }
-
 
   const toggleRecommendedFindings = () => {
     setSelectedDomains((current) => {
@@ -325,13 +330,13 @@ export function EmailHistoryPage() {
       {analysis && (
         <section className="mt-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div><p className="text-label uppercase text-gold">Private analysis complete</p><h2 className="mt-2 text-2xl font-semibold">Corroborated accounts</h2><p className="mt-2 text-body-s text-ink/55">Checked {analysis.messagesScanned.toLocaleString()} likely messages; {analysis.candidateMessages.toLocaleString()} contained recognizable account evidence. Only independently corroborated accounts are selected.</p></div>
-            {recommendedFindings.length > 0 && <button type="button" onClick={toggleRecommendedFindings} className={secondaryButtonClass}>{recommendedFindings.every(({ senderDomain }) => selectedDomains.has(senderDomain)) ? 'Clear recommended' : 'Select recommended'}</button>}
+            <div><p className="text-label uppercase text-gold">Private analysis complete</p><h2 className="mt-2 text-2xl font-semibold">Corroborated accounts</h2><p className="mt-2 text-body-s text-ink/55">Checked {analysis.messagesScanned.toLocaleString()} likely messages; {analysis.candidateMessages.toLocaleString()} contained recognizable account evidence. Only independently corroborated accounts above 80% confidence are selected automatically.</p></div>
+            {recommendedFindings.length > 0 && <button type="button" onClick={toggleRecommendedFindings} className={secondaryButtonClass}>{recommendedFindings.every(({ senderDomain }) => selectedDomains.has(senderDomain)) ? 'Clear corroborated' : 'Select all corroborated'}</button>}
           </div>
-          <div className="mt-5 flex items-start gap-3 border border-emerald-200 bg-emerald-50 p-4 text-body-s text-emerald-900"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>Automatic cleanup merged {analysis.duplicatesMerged.toLocaleString()} duplicate sender{analysis.duplicatesMerged === 1 ? '' : 's'}, removed {analysis.findingsFiltered.toLocaleString()} weak or spam-like result{analysis.findingsFiltered === 1 ? '' : 's'}, and held back {possibleFindings.length.toLocaleString()} lower-confidence signal{possibleFindings.length === 1 ? '' : 's'}. {recommendedFindings.length.toLocaleString()} corroborated account{recommendedFindings.length === 1 ? ' is' : 's are'} selected for you.</p></div>
+          <div className="mt-5 flex items-start gap-3 border border-emerald-200 bg-emerald-50 p-4 text-body-s text-emerald-900"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>Automatic cleanup merged {analysis.duplicatesMerged.toLocaleString()} duplicate sender{analysis.duplicatesMerged === 1 ? '' : 's'}, removed {analysis.findingsFiltered.toLocaleString()} weak or spam-like result{analysis.findingsFiltered === 1 ? '' : 's'}, and held back {possibleFindings.length.toLocaleString()} lower-confidence signal{possibleFindings.length === 1 ? '' : 's'}. {autoSelectedFindings.length.toLocaleString()} corroborated account{autoSelectedFindings.length === 1 ? ' is' : 's are'} above 80% and selected; exact-80% results remain unselected for review.</p></div>
           {recommendedFindings.length ? <div className="mt-5 grid gap-4 lg:grid-cols-2">{recommendedFindings.map(findingCard)}</div> : <div className="mt-5"><EmptyState title="No corroborated accounts after cleanup" description="Nothing is selected or saved. Lower-confidence signals remain available below if you want to inspect them." /></div>}
           {possibleFindings.length > 0 && <details className="group mt-5 border border-ink/10 bg-white"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-body-s font-medium"><span>Show {possibleFindings.length.toLocaleString()} possible account signal{possibleFindings.length === 1 ? '' : 's'} — not selected</span><ChevronDown size={18} className="transition group-open:rotate-180" /></summary><div className="grid gap-4 border-t border-ink/10 bg-bone p-5 lg:grid-cols-2">{possibleFindings.map(findingCard)}</div></details>}
-          {analysis.findings.length > 0 && <div className="mt-6 flex flex-col items-start justify-between gap-4 border border-ink/10 bg-white p-5 md:flex-row md:items-center"><p className="text-body-s text-ink/55">{selectedDomains.size} of {analysis.findings.length} account signals selected. Lower-confidence signals stay unselected unless you choose them. Subject examples never leave this page.</p><button type="button" onClick={() => void saveSelected()} disabled={saving || selectedDomains.size === 0} className={primaryButtonClass}><ShieldCheck size={17} className="mr-2" />{saving ? 'Saving privately…' : 'Save selected for review'}</button></div>}
+          {analysis.findings.length > 0 && <div className="mt-6 flex flex-col items-start justify-between gap-4 border border-ink/10 bg-white p-5 md:flex-row md:items-center"><p className="text-body-s text-ink/55">{selectedDomains.size} of {analysis.findings.length} account signals selected. Exact-80% and lower-confidence signals stay unselected unless you choose them. Subject examples never leave this page.</p><button type="button" onClick={() => void saveSelected()} disabled={saving || selectedDomains.size === 0} className={primaryButtonClass}><ShieldCheck size={17} className="mr-2" />{saving ? 'Saving privately…' : 'Save selected for review'}</button></div>}
         </section>
       )}
 

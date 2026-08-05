@@ -1,5 +1,6 @@
 export const EMAIL_EVIDENCE_KINDS = ['account_signup', 'email_verification', 'password_reset', 'receipt', 'account_notice'] as const
 export const MAX_RECOMMENDED_FINDINGS = 50
+export const AUTO_SELECT_CONFIDENCE_THRESHOLD = 80
 
 export type EmailEvidenceKind = typeof EMAIL_EVIDENCE_KINDS[number]
 
@@ -34,6 +35,10 @@ export interface ParsedEmailMessage {
   listId?: string
   listUnsubscribe?: string
   precedence?: string
+}
+
+export function shouldAutoSelectFinding(finding: Pick<EmailHistoryFindingDraft, 'confidenceScore' | 'recommended'>) {
+  return finding.recommended && finding.confidenceScore > AUTO_SELECT_CONFIDENCE_THRESHOLD
 }
 
 interface MutableFinding {
