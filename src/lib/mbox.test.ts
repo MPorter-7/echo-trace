@@ -49,6 +49,97 @@ describe('Google Takeout mbox analysis', () => {
       messageCount: 2,
     })
     expect(result.findings[0].evidenceTypes).toEqual(expect.arrayContaining(['account_signup', 'email_verification', 'receipt']))
+    expect(result).toMatchObject({ findingsBeforeCleanup: 1, duplicatesMerged: 0, findingsFiltered: 0 })
+  })
+
+  it('merges service subdomains and uses the service domain instead of an arbitrary display name', () => {
+    const result = analyze(`From first Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Matt Porter <no-reply@accounts.example.com>
+Subject: Welcome to Example
+
+Your account was created.
+From second Wed Feb 02 00:00:00 2022
+Date: Wed, 2 Feb 2022 00:00:00 +0000
+From: Example Security <alerts@security.example.com>
+Subject: Verify your email
+
+Confirm your email address.
+`)
+    expect(result.findings).toHaveLength(1)
+    expect(result.findings[0]).toMatchObject({ serviceName: 'Example', senderDomain: 'example.com', messageCount: 2 })
+    expect(result.duplicatesMerged).toBe(1)
+  })
+
+  it('removes one-off receipt matches and obvious prize spam', () => {
+    const result = analyze(`From receipt Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Billing <billing@unknown-store.test>
+Subject: Your payment receipt
+
+Thank you for your purchase.
+From spam Wed Feb 02 00:00:00 2022
+Date: Wed, 2 Feb 2022 00:00:00 +0000
+From: Rewards <verify@instant-jackpot.test>
+Subject: Verify your account to claim your cash prize
+
+Welcome to the jackpot. Redeem your reward now.
+`)
+    expect(result.findings).toHaveLength(0)
+    expect(result.findingsBeforeCleanup).toBe(2)
+    expect(result.findingsFiltered).toBe(2)
+  })
+
+  it('keeps high-signal one-message evidence and repeated purchase evidence', () => {
+    const result = analyze(`From verify Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Accounts <accounts@service.test>
+Subject: Verify your email
+
+Activate your account.
+From receipt1 Wed Feb 02 00:00:00 2022
+Date: Wed, 2 Feb 2022 00:00:00 +0000
+From: Store <billing@shop.test>
+Subject: Your order confirmation receipt
+
+Thank you for your purchase.
+From receipt2 Thu Feb 03 00:00:00 2022
+Date: Thu, 3 Feb 2022 00:00:00 +0000
+From: Store <billing@shop.test>
+Subject: Your second order confirmation
+
+Thank you for your purchase.
+`)
+    expect(result.findings.map(({ senderDomain }) => senderDomain)).toEqual(expect.arrayContaining(['service.test', 'shop.test']))
+  })
+
+  it('does not turn mail from a personal mailbox provider into an account finding', () => {
+    const result = analyze(`From self Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Matt Porter <person@gmail.com>
+Subject: Welcome to my project
+
+Verify your email before testing.
+`)
+    expect(result.findings).toHaveLength(0)
+    expect(result.findingsFiltered).toBe(1)
+  })
+
+  it('reduces a 623-result noisy scan to the credible accounts automatically', () => {
+    const message = (index: number, domain: string, subject: string, body: string) => `From message${index} Tue Feb 01 00:00:00 2022
+Date: Tue, 1 Feb 2022 00:00:00 +0000
+From: Sender <notice@${domain}>
+Subject: ${subject}
+
+${body}
+`
+    const spam = Array.from({ length: 600 }, (_, index) => message(index, `jackpot-${index}.test`, 'Verify your account to claim your cash prize', 'Welcome to the jackpot. Redeem your reward now.'))
+    const legitimate = Array.from({ length: 23 }, (_, index) => message(index + 600, `service-${index}.test`, 'Verify your email', 'Activate your account to get started.'))
+    const result = analyze([...spam, ...legitimate].join(''))
+
+    expect(result.findingsBeforeCleanup).toBe(623)
+    expect(result.findingsFiltered).toBe(600)
+    expect(result.findings).toHaveLength(23)
   })
 
   it('preserves messages when streamed chunks split inside a header', () => {
