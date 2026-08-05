@@ -7,7 +7,7 @@ import { EmptyState, PageHeader } from '../../components/DashboardUI'
 import { primaryButtonClass, secondaryButtonClass } from '../../components/FormFields'
 import { canTransitionMatch, confidenceLevel } from '../../lib/confidence'
 import { loadGoogleIdentityServices, scanGmailOnce } from '../../lib/gmail'
-import { analyzeMboxFile, formatEmailEvidenceKind, validateMboxFile, type EmailEvidenceKind, type EmailHistoryAnalysis } from '../../lib/mbox'
+import { analyzeMboxFile, formatEmailEvidenceKind, validateMboxFile, type EmailEvidenceKind, type EmailHistoryAnalysis, type EmailHistoryFindingDraft } from '../../lib/mbox'
 import { supabase } from '../../lib/supabase'
 import type { EmailFinding, EmailImport, MatchStatus } from '../../types/echo'
 
@@ -63,6 +63,8 @@ export function EmailHistoryPage() {
   }, [googleClientId])
 
   const importNames = useMemo(() => new Map(imports.map((item) => [item.id, item.original_name])), [imports])
+  const recommendedFindings = useMemo(() => analysis?.findings.filter(({ recommended }) => recommended) ?? [], [analysis])
+  const possibleFindings = useMemo(() => analysis?.findings.filter(({ recommended }) => !recommended) ?? [], [analysis])
 
   const analyze = async (event: FormEvent) => {
     event.preventDefault()
@@ -81,8 +83,11 @@ export function EmailHistoryPage() {
       const result = await analyzeMboxFile(file, setProgress)
       setAnalysis(result)
       setAnalysisSource({ name: file.name, sizeBytes: file.size, kind: 'mbox' })
-      setSelectedDomains(new Set(result.findings.map(({ senderDomain }) => senderDomain)))
-      if (result.findings.length) toast.success(`Found ${result.findings.length} likely account${result.findings.length === 1 ? '' : 's'} after automatic cleanup.`)
+      const recommended = result.findings.filter((finding) => finding.recommended)
+      const possible = result.findings.length - recommended.length
+      setSelectedDomains(new Set(recommended.map(({ senderDomain }) => senderDomain)))
+      if (recommended.length) toast.success(`Found ${recommended.length} corroborated account${recommended.length === 1 ? '' : 's'} after automatic cleanup.`)
+      else if (possible > 0) toast.info(`No corroborated accounts were found. ${possible} lower-confidence signal${possible === 1 ? ' was' : 's were'} held back.`)
       else if (result.findingsFiltered > 0) toast.info('Automatic cleanup removed every weak or spam-like result. Nothing was saved.')
       else toast.info('No account evidence was recognized in this file. Nothing was uploaded or saved.')
     } catch (error) {
@@ -106,10 +111,15 @@ export function EmailHistoryPage() {
       })
       setAnalysis(result.analysis)
       setAnalysisSource({ name: `Gmail quick scan — ${result.emailAddress}`.slice(0, 180), sizeBytes: 0, kind: 'gmail' })
-      setSelectedDomains(new Set(result.analysis.findings.map(({ senderDomain }) => senderDomain)))
-      if (result.analysis.findings.length) {
-        toast.success(`Found ${result.analysis.findings.length} likely account${result.analysis.findings.length === 1 ? '' : 's'} after automatic cleanup.`)
+      const recommended = result.analysis.findings.filter((finding) => finding.recommended)
+      const possible = result.analysis.findings.length - recommended.length
+      setSelectedDomains(new Set(recommended.map(({ senderDomain }) => senderDomain)))
+      if (recommended.length) {
+        toast.success(`Found ${recommended.length} corroborated account${recommended.length === 1 ? '' : 's'} after automatic cleanup.`)
+        if (possible > 0) toast.info(`${possible} lower-confidence signal${possible === 1 ? ' was' : 's were'} held back and left unselected.`)
         if (result.reachedLimit) toast.info('Quick Scan reached its 5,000-message safety limit. You can still review and save these findings.')
+      } else if (possible > 0) {
+        toast.info(`No corroborated accounts were found. ${possible} lower-confidence signal${possible === 1 ? ' was' : 's were'} held back.`)
       } else if (result.analysis.findingsFiltered > 0) {
         toast.info('Automatic cleanup removed every weak or spam-like result. Nothing was saved.')
       } else {
@@ -130,6 +140,28 @@ export function EmailHistoryPage() {
       return next
     })
   }
+
+
+  const toggleRecommendedFindings = () => {
+    setSelectedDomains((current) => {
+      const next = new Set(current)
+      const allSelected = recommendedFindings.length > 0 && recommendedFindings.every(({ senderDomain }) => current.has(senderDomain))
+      for (const { senderDomain } of recommendedFindings) {
+        if (allSelected) next.delete(senderDomain)
+        else next.add(senderDomain)
+      }
+      return next
+    })
+  }
+
+  const findingCard = (finding: EmailHistoryFindingDraft) => (
+    <label key={finding.senderDomain} className={`cursor-pointer border bg-white p-6 transition ${selectedDomains.has(finding.senderDomain) ? 'border-gold ring-1 ring-gold' : 'border-ink/10'}`}>
+      <div className="flex items-start gap-4"><input type="checkbox" checked={selectedDomains.has(finding.senderDomain)} onChange={() => toggleFinding(finding.senderDomain)} className="mt-1 h-4 w-4 accent-ink" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="text-xl font-semibold">{finding.serviceName}</h3><span className="rounded-full bg-mist px-3 py-1 text-micro uppercase">{finding.confidenceScore}% {confidenceLevel(finding.confidenceScore)}</span>{finding.recommended && <span className="rounded-full bg-emerald-50 px-3 py-1 text-micro uppercase text-emerald-800">corroborated</span>}</div><p className="mt-1 text-body-s text-ink/45">{finding.senderDomain} · {finding.messageCount} relevant message{finding.messageCount === 1 ? '' : 's'}</p></div></div>
+      <div className="mt-4 flex flex-wrap gap-2">{finding.evidenceTypes.map((kind) => <span key={kind} className="rounded-full bg-emerald-50 px-3 py-1 text-micro text-emerald-800">{formatEmailEvidenceKind(kind)} ({finding.evidenceCounts[kind]})</span>)}</div>
+      <p className="mt-4 text-body-s text-ink/55">{formatDate(finding.firstSeen)}{finding.lastSeen && finding.lastSeen !== finding.firstSeen ? ` – ${formatDate(finding.lastSeen)}` : ''}</p>
+      {finding.sampleSubjects.length > 0 && <div className="mt-4 border-l-2 border-gold pl-4"><p className="text-micro uppercase text-ink/40">Local-only examples</p>{finding.sampleSubjects.map((subject) => <p key={subject} className="mt-1 truncate text-body-s text-ink/60">{subject}</p>)}</div>}
+    </label>
+  )
 
   const saveSelected = async () => {
     if (!supabase || !user || !analysisSource || !analysis) return
@@ -293,19 +325,13 @@ export function EmailHistoryPage() {
       {analysis && (
         <section className="mt-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div><p className="text-label uppercase text-gold">Private analysis complete</p><h2 className="mt-2 text-2xl font-semibold">Likely accounts found</h2><p className="mt-2 text-body-s text-ink/55">Checked {analysis.messagesScanned.toLocaleString()} likely messages; {analysis.candidateMessages.toLocaleString()} contained recognizable account evidence.</p></div>
-            {analysis.findings.length > 0 && <button type="button" onClick={() => setSelectedDomains(selectedDomains.size === analysis.findings.length ? new Set() : new Set(analysis.findings.map(({ senderDomain }) => senderDomain)))} className={secondaryButtonClass}>{selectedDomains.size === analysis.findings.length ? 'Clear selection' : 'Select likely accounts'}</button>}
+            <div><p className="text-label uppercase text-gold">Private analysis complete</p><h2 className="mt-2 text-2xl font-semibold">Corroborated accounts</h2><p className="mt-2 text-body-s text-ink/55">Checked {analysis.messagesScanned.toLocaleString()} likely messages; {analysis.candidateMessages.toLocaleString()} contained recognizable account evidence. Only independently corroborated accounts are selected.</p></div>
+            {recommendedFindings.length > 0 && <button type="button" onClick={toggleRecommendedFindings} className={secondaryButtonClass}>{recommendedFindings.every(({ senderDomain }) => selectedDomains.has(senderDomain)) ? 'Clear recommended' : 'Select recommended'}</button>}
           </div>
-          {(analysis.duplicatesMerged > 0 || analysis.findingsFiltered > 0) && <div className="mt-5 flex items-start gap-3 border border-emerald-200 bg-emerald-50 p-4 text-body-s text-emerald-900"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>Automatic cleanup merged {analysis.duplicatesMerged.toLocaleString()} duplicate sender{analysis.duplicatesMerged === 1 ? '' : 's'} and removed {analysis.findingsFiltered.toLocaleString()} weak or spam-like result{analysis.findingsFiltered === 1 ? '' : 's'}. The likely accounts below are selected for you; uncheck anything you do not recognize.</p></div>}
-          {analysis.findings.length ? <div className="mt-5 grid gap-4 lg:grid-cols-2">{analysis.findings.map((finding) => (
-            <label key={finding.senderDomain} className={`cursor-pointer border bg-white p-6 transition ${selectedDomains.has(finding.senderDomain) ? 'border-gold ring-1 ring-gold' : 'border-ink/10'}`}>
-              <div className="flex items-start gap-4"><input type="checkbox" checked={selectedDomains.has(finding.senderDomain)} onChange={() => toggleFinding(finding.senderDomain)} className="mt-1 h-4 w-4 accent-ink" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="text-xl font-semibold">{finding.serviceName}</h3><span className="rounded-full bg-mist px-3 py-1 text-micro uppercase">{finding.confidenceScore}% {confidenceLevel(finding.confidenceScore)}</span></div><p className="mt-1 text-body-s text-ink/45">{finding.senderDomain} · {finding.messageCount} relevant message{finding.messageCount === 1 ? '' : 's'}</p></div></div>
-              <div className="mt-4 flex flex-wrap gap-2">{finding.evidenceTypes.map((kind) => <span key={kind} className="rounded-full bg-emerald-50 px-3 py-1 text-micro text-emerald-800">{formatEmailEvidenceKind(kind)} ({finding.evidenceCounts[kind]})</span>)}</div>
-              <p className="mt-4 text-body-s text-ink/55">{formatDate(finding.firstSeen)}{finding.lastSeen && finding.lastSeen !== finding.firstSeen ? ` – ${formatDate(finding.lastSeen)}` : ''}</p>
-              {finding.sampleSubjects.length > 0 && <div className="mt-4 border-l-2 border-gold pl-4"><p className="text-micro uppercase text-ink/40">Local-only examples</p>{finding.sampleSubjects.map((subject) => <p key={subject} className="mt-1 truncate text-body-s text-ink/60">{subject}</p>)}</div>}
-            </label>
-          ))}</div> : <EmptyState title={analysis.findingsFiltered > 0 ? 'No likely accounts after cleanup' : 'No account evidence recognized'} description={analysis.findingsFiltered > 0 ? `EchoTrace removed ${analysis.findingsFiltered.toLocaleString()} weak or spam-like result${analysis.findingsFiltered === 1 ? '' : 's'}. Nothing was saved.` : 'Nothing was saved. Try another Gmail account or use the advanced email-export option.'} />}
-          {analysis.findings.length > 0 && <div className="mt-6 flex flex-col items-start justify-between gap-4 border border-ink/10 bg-white p-5 md:flex-row md:items-center"><p className="text-body-s text-ink/55">{selectedDomains.size} of {analysis.findings.length} likely accounts selected. Subject examples shown above never leave this page.</p><button type="button" onClick={() => void saveSelected()} disabled={saving || selectedDomains.size === 0} className={primaryButtonClass}><ShieldCheck size={17} className="mr-2" />{saving ? 'Saving privately…' : 'Save likely accounts for review'}</button></div>}
+          <div className="mt-5 flex items-start gap-3 border border-emerald-200 bg-emerald-50 p-4 text-body-s text-emerald-900"><ShieldCheck size={19} className="mt-0.5 shrink-0" /><p>Automatic cleanup merged {analysis.duplicatesMerged.toLocaleString()} duplicate sender{analysis.duplicatesMerged === 1 ? '' : 's'}, removed {analysis.findingsFiltered.toLocaleString()} weak or spam-like result{analysis.findingsFiltered === 1 ? '' : 's'}, and held back {possibleFindings.length.toLocaleString()} lower-confidence signal{possibleFindings.length === 1 ? '' : 's'}. {recommendedFindings.length.toLocaleString()} corroborated account{recommendedFindings.length === 1 ? ' is' : 's are'} selected for you.</p></div>
+          {recommendedFindings.length ? <div className="mt-5 grid gap-4 lg:grid-cols-2">{recommendedFindings.map(findingCard)}</div> : <div className="mt-5"><EmptyState title="No corroborated accounts after cleanup" description="Nothing is selected or saved. Lower-confidence signals remain available below if you want to inspect them." /></div>}
+          {possibleFindings.length > 0 && <details className="group mt-5 border border-ink/10 bg-white"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-body-s font-medium"><span>Show {possibleFindings.length.toLocaleString()} possible account signal{possibleFindings.length === 1 ? '' : 's'} — not selected</span><ChevronDown size={18} className="transition group-open:rotate-180" /></summary><div className="grid gap-4 border-t border-ink/10 bg-bone p-5 lg:grid-cols-2">{possibleFindings.map(findingCard)}</div></details>}
+          {analysis.findings.length > 0 && <div className="mt-6 flex flex-col items-start justify-between gap-4 border border-ink/10 bg-white p-5 md:flex-row md:items-center"><p className="text-body-s text-ink/55">{selectedDomains.size} of {analysis.findings.length} account signals selected. Lower-confidence signals stay unselected unless you choose them. Subject examples never leave this page.</p><button type="button" onClick={() => void saveSelected()} disabled={saving || selectedDomains.size === 0} className={primaryButtonClass}><ShieldCheck size={17} className="mr-2" />{saving ? 'Saving privately…' : 'Save selected for review'}</button></div>}
         </section>
       )}
 

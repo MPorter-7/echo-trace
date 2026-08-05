@@ -5,7 +5,7 @@ export const GMAIL_QUICK_SCAN_LIMIT = 5000
 
 const GMAIL_API_ROOT = 'https://gmail.googleapis.com/gmail/v1/users/me'
 const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client'
-export const GMAIL_EVIDENCE_QUERY = '-in:spam -in:trash -in:sent -in:drafts {"welcome to" "verify your email" "confirm your email" "activate your account" "account created" "registration complete" "password reset" "reset your password" "security alert" "account notice" "new sign-in" "new login" "verification code"}'
+export const GMAIL_EVIDENCE_QUERY = '-in:spam -in:trash -in:sent -in:drafts -category:promotions {subject:"verify your email" subject:"verify your e-mail" subject:"confirm your email" subject:"confirm your registration" subject:"activate your account" subject:"account created" subject:"registration complete" subject:"password reset" subject:"reset your password" subject:"password changed" subject:"security alert" subject:"account notice" subject:"new sign-in" subject:"new login" subject:"verification code" subject:"one-time code"}'
 const BODY_SAMPLE_LIMIT = 24 * 1024
 const FETCH_CONCURRENCY = 8
 
@@ -156,6 +156,9 @@ export function parseGmailMessage(message: GmailMessage): ParsedEmailMessage {
     subject: headers.get('subject') ?? '',
     date: headers.get('date') ?? '',
     bodySample: (message.snippet ?? plainTextFromPart(message.payload ?? {})).slice(0, BODY_SAMPLE_LIMIT),
+    listId: headers.get('list-id') ?? '',
+    listUnsubscribe: headers.get('list-unsubscribe') ?? '',
+    precedence: headers.get('precedence') ?? '',
   }
 }
 
@@ -185,7 +188,7 @@ async function analyzeCandidateMessages(ids: string[], accessToken: string, onPr
   for (let index = 0; index < ids.length; index += FETCH_CONCURRENCY) {
     const batch = ids.slice(index, index + FETCH_CONCURRENCY)
     const messages = await Promise.allSettled(batch.map((id) => gmailFetch<GmailMessage>(
-      `/messages/${encodeURIComponent(id)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+      `/messages/${encodeURIComponent(id)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=List-Id&metadataHeaders=List-Unsubscribe&metadataHeaders=Precedence`,
       accessToken,
     )))
     const successful = messages.filter((result): result is PromiseFulfilledResult<GmailMessage> => result.status === 'fulfilled')
