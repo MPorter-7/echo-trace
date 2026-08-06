@@ -70,6 +70,7 @@ supabase functions deploy delete-account
 ```
 
 Supabase automatically supplies `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to its function runtime. Do not expose those values to Vercel.
+The function requires a valid user JWT, accepts browser calls only from the production site or local development, verifies Storage deletion, and stops before deleting the Auth account if archive cleanup fails.
 
 ## 6. Configure Vercel
 

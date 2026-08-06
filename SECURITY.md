@@ -43,7 +43,7 @@ The parser caps retained header and body samples and streams files instead of lo
 
 ## Account deletion
 
-Deleting application data is owner-scoped and does not need elevated credentials. Deleting a Supabase Auth user is performed only inside `supabase/functions/delete-account`, which validates the caller's JWT before using the runtime service-role secret. That secret is never bundled into the frontend.
+Deleting application data is owner-scoped and does not need elevated credentials. Deleting a Supabase Auth user is performed only inside `supabase/functions/delete-account`, which validates the caller's JWT before using the runtime service-role secret. Before deleting the Auth user, the function lists archive metadata and Storage objects, deletes every owner-scoped object in checked batches, and aborts if any listing or deletion request fails. The service-role secret is never bundled into the frontend.
 
 ## Confidence and sources
 

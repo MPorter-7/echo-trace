@@ -106,7 +106,7 @@ export function SettingsPage() {
     setWorking(true)
     const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' })
     setWorking(false)
-    if (error) toast.error('Account deletion needs the delete-account Edge Function described in SETUP.md.')
+    if (error) toast.error('Your account was not deleted. Archive cleanup or account removal failed; please try again.')
     else { await signOut(); navigate('/', { replace: true }) }
   }
 
