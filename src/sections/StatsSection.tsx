@@ -2,28 +2,27 @@ import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
 import { SectionLabel } from '../components/SectionLabel'
 import { ArrowLink } from '../components/ArrowLink'
-import { AnimatedCounter } from '../components/AnimatedCounter'
 
 const stats = [
   {
-    value: '47%',
+    value: 'Private by design',
     description:
-      'of online accounts are abandoned or forgotten by their original owners, leaving fragments of personal history scattered across the web',
+      'Email history is analyzed in your browser. EchoTrace saves only the account findings you explicitly select—not raw mailbox content or credentials.',
   },
   {
-    value: '156+',
+    value: 'Evidence linked',
     description:
-      'data sources continuously monitored and cross-referenced to build the most complete picture of your digital identity',
+      'Possible matches keep their original public source and retrieval date so you can inspect the evidence behind each result.',
   },
   {
-    value: '2.3M',
+    value: 'You decide',
     description:
-      'records processed daily through our correlation engine, each one analyzed for relevance, accuracy, and relationship to your identity graph',
+      'Confidence is an explainable estimate, never proof. You accept, reject, or mark each possible match uncertain before it becomes part of your history.',
   },
   {
-    value: '99.7%',
+    value: 'Portable and removable',
     description:
-      'accuracy rate in conflict resolution when cross-referencing multiple data sources for the same identity event',
+      'Export your timeline as JSON or CSV, remove individual records, or delete your application data when you choose.',
   },
 ]
 
@@ -70,7 +69,7 @@ export function StatsSection() {
     >
       <div className="max-w-content mx-auto px-5 md:px-10 lg:px-20">
         <div ref={headerRef} className="flex items-start justify-between mb-12">
-          <SectionLabel text="04 / BY THE NUMBERS" />
+          <SectionLabel text="04 / BUILT ON EVIDENCE" />
           <ArrowLink text="Learn more" href="#security" light />
         </div>
 
@@ -83,7 +82,9 @@ export function StatsSection() {
               key={i}
               className="border border-bone/20 rounded p-10 min-h-[200px]"
             >
-              <AnimatedCounter target={stat.value} duration={1.5} />
+              <h3 className="text-3xl font-semibold leading-tight tracking-[-0.02em] text-bone md:text-4xl">
+                {stat.value}
+              </h3>
               <p className="text-body-m text-bone/80 mt-4 leading-relaxed">
                 {stat.description}
               </p>
