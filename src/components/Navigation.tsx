@@ -27,13 +27,13 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
     <>
       <nav
         className={`fixed top-0 left-0 right-0 z-nav h-16 flex items-center transition-all duration-300 ${
-          isScrolled ? 'bg-bone/90 backdrop-blur-xl' : 'bg-bone/80 backdrop-blur-md'
+          isScrolled ? 'bg-bone/90 text-ink backdrop-blur-xl' : 'bg-[#020817]/20 text-white backdrop-blur-sm'
         }`}
-        style={{ borderBottom: '1px solid rgba(26, 26, 26, 0.1)' }}
+        style={{ borderBottom: `1px solid ${isScrolled ? 'rgba(26, 26, 26, 0.1)' : 'rgba(255, 255, 255, 0.14)'}` }}
       >
         <div className="w-full max-w-content mx-auto px-5 md:px-10 lg:px-20 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="text-heading-m font-semibold text-ink">
+          <Link to="/" className="text-heading-m font-semibold text-current">
             EchoTrace
           </Link>
 
@@ -42,21 +42,21 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
             <a
               href="#main"
               onClick={(e) => handleNavClick(e, '#main')}
-              className="text-body-m text-ink hover:text-gold transition-colors duration-200"
+              className="text-body-m text-current hover:text-cyan-300 transition-colors duration-200"
             >
               About
             </a>
             <a
               href="#security"
               onClick={(e) => handleNavClick(e, '#security')}
-              className="text-body-m text-ink hover:text-gold transition-colors duration-200"
+              className="text-body-m text-current hover:text-cyan-300 transition-colors duration-200"
             >
               Security
             </a>
             <a
               href="#features"
               onClick={(e) => handleNavClick(e, '#features')}
-              className="text-body-m text-ink hover:text-gold transition-colors duration-200"
+              className="text-body-m text-current hover:text-cyan-300 transition-colors duration-200"
             >
               Download
             </a>
@@ -64,10 +64,14 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
 
           {/* Desktop CTA */}
           <div className="hidden items-center gap-3 md:flex">
-            <Link to="/login" className="px-3 py-2 text-body-s font-medium text-ink hover:text-gold">Sign in</Link>
+            <Link to="/login" className="px-3 py-2 text-body-s font-medium text-current hover:text-cyan-300">Sign in</Link>
             <button
               onClick={onRequestAccess}
-              className="rounded-pill border border-ink bg-bone px-6 py-2.5 text-body-s font-medium text-ink transition-all duration-300 hover:bg-ink hover:text-bone"
+              className={`rounded-pill border px-6 py-2.5 text-body-s font-medium transition-all duration-300 ${
+                isScrolled
+                  ? 'border-ink bg-bone text-ink hover:bg-ink hover:text-bone'
+                  : 'border-white/50 bg-white/10 text-white hover:border-cyan-300 hover:bg-cyan-300 hover:text-[#02101f]'
+              }`}
             >
               Request Access
             </button>
@@ -76,7 +80,7 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
           {/* Mobile Hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-ink p-2"
+            className="p-2 text-current md:hidden"
             aria-label="Toggle menu"
           >
             <svg width="20" height="14" viewBox="0 0 20 14" fill="none" stroke="currentColor" strokeWidth="1.5">
