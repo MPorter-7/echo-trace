@@ -16,9 +16,9 @@ const features = [
         <line x1="21.5" y1="9.5" x2="12.5" y2="22.5" />
       </svg>
     ),
-    title: 'Cross-Platform Correlation',
+    title: 'Evidence Connections',
     description:
-      'Intelligent algorithms discover hidden connections across disparate public data sources. Accounts, posts, profiles, and interactions are automatically linked to build a unified picture of your digital footprint.',
+      'Compare account clues and traceable public-source results in one workspace. EchoTrace surfaces supporting signals without treating a possible connection as a confirmed identity.',
   },
   {
     icon: (
@@ -28,9 +28,9 @@ const features = [
         <polyline points="12,10 6,16 12,22" />
       </svg>
     ),
-    title: 'Conflict Resolution',
+    title: 'Conflict Review',
     description:
-      'When records from different sources contradict each other, EchoTrace applies intelligent heuristics to determine the most accurate information. Conflicts are flagged, analyzed, and resolved automatically.',
+      'When records contradict one another, EchoTrace keeps the conflicting signals visible. You can accept, reject, or mark a possible match uncertain after reviewing its evidence.',
   },
   {
     icon: (
@@ -41,7 +41,7 @@ const features = [
     ),
     title: 'Confidence Scoring',
     description:
-      'Every piece of recovered data receives a confidence score based on source reliability, cross-reference verification, and data freshness. You always know how trustworthy each fragment of your history is.',
+      'Possible matches receive deterministic confidence estimates based on supporting and conflicting signals. Each explanation shows why the score was assigned and makes clear that it is not proof.',
   },
   {
     icon: (
@@ -54,7 +54,7 @@ const features = [
     ),
     title: 'Timeline Visualization',
     description:
-      'Your reconstructed history is presented as an interactive, chronological timeline. Navigate through years of digital life with an intuitive interface that makes your data immediately comprehensible.',
+      'Organize the events you verify into a searchable chronological timeline. Keep uncertain dates visible, filter your history, and export the records you choose.',
   },
 ]
 

@@ -63,7 +63,7 @@ export function OverviewSection() {
           Identity shouldn't be a puzzle you can't solve.
         </h2>
         <p ref={bodyRef} className="text-body-l text-ink/80 max-w-[640px] mx-auto mb-6">
-          EchoTrace automatically discovers, correlates, normalizes, and stitches together fragments of your publicly available digital history into a clear chronological timeline. We cross-reference information across sources, account for missing records, resolve conflicts, remove redundancies, and generate confidence scores - giving you back control over your own narrative.
+          EchoTrace gives you a private workspace to rebuild your own digital history from information you provide, account evidence you authorize, and traceable public sources. It organizes possible matches, explains confidence signals, and keeps conflicts visible while you decide what becomes part of your timeline.
         </p>
         <div ref={ctaRef} className="mb-12">
           <ArrowLink text="Learn more" href="#features" />
