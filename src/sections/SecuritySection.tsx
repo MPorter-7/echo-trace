@@ -110,7 +110,7 @@ export function SecuritySection() {
               Your data. Your control.
             </h2>
             <p className="text-body-m text-ink/80 max-w-[440px] leading-relaxed mb-8">
-              EchoTrace is built on a foundation of transparency and user sovereignty. We never store passwords, never access private accounts, and never share your data with third parties. Our platform only processes publicly available information that you have the right to access. Every data source is fully auditable, every correlation is explainable, and every result can be traced back to its origin. You decide what to keep, what to discard, and what to share.
+              EchoTrace never asks for or stores your passwords. Gmail analysis uses temporary, read-only access that you explicitly approve, and raw mailbox content is not saved. Public-source findings retain their source and retrieval date, confidence estimates are explained, and possible matches require your review. You decide what to keep, discard, export, or delete.
             </p>
             <ArrowLink text="Read our privacy model" href="/privacy" />
           </div>

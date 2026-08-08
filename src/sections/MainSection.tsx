@@ -74,10 +74,10 @@ export function MainSection() {
               Rebuild your digital past.
             </h1>
             <p ref={body1Ref} className="mb-4 max-w-[480px] text-body-l text-ink">
-              Every account you've created, every platform you've used, every digital footprint you've left behind - EchoTrace reconstructs the fragments of your online identity into a coherent, chronological narrative.
+              Start with information you know, review account evidence from your own email history, and explore traceable public sources. EchoTrace helps you organize the fragments you verify into a chronological narrative.
             </p>
             <p ref={body2Ref} className="mb-8 max-w-[480px] text-body-m text-ink/80">
-              Our intelligent correlation engine discovers connections across public data sources, resolves conflicts between records, and assigns confidence scores to every recovered piece of your digital history.
+              Possible matches retain their sources and receive explainable confidence estimates. Conflicting signals stay visible so you—not an algorithm—decide what belongs in your history.
             </p>
             <div ref={ctaRef}>
               <ArrowLink text="Learn more" href="#features" />
