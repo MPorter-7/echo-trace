@@ -52,17 +52,12 @@ interface GmailMessageList {
   nextPageToken?: string
 }
 
-interface GmailProfile {
-  emailAddress?: string
-}
-
 export interface GmailScanProgress {
   percent: number
   label: string
 }
 
 export interface GmailScanResult {
-  emailAddress: string
   analysis: EmailHistoryAnalysis
   reachedLimit: boolean
 }
@@ -214,11 +209,9 @@ export async function scanGmailOnce(clientId: string, onProgress?: (progress: Gm
 
   try {
     onProgress?.({ percent: 2, label: 'Connected securely' })
-    const profile = await gmailFetch<GmailProfile>('/profile', accessToken)
     const { ids, reachedLimit } = await listCandidateIds(accessToken, onProgress)
     const analysis = await analyzeCandidateMessages(ids, accessToken, onProgress)
     return {
-      emailAddress: profile.emailAddress ?? 'Connected Gmail account',
       analysis,
       reachedLimit,
     }
