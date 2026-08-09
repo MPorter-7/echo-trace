@@ -113,7 +113,7 @@ export function EmailHistoryPage() {
         setProgressLabel(label)
       })
       setAnalysis(result.analysis)
-      setAnalysisSource({ name: `Gmail quick scan — ${result.emailAddress}`.slice(0, 180), sizeBytes: 0, kind: 'gmail' })
+      setAnalysisSource({ name: 'Gmail quick scan', sizeBytes: 0, kind: 'gmail' })
       const recommended = result.analysis.findings.filter((finding) => finding.recommended)
       const autoSelected = recommended.filter(shouldAutoSelectFinding)
       const possible = result.analysis.findings.length - recommended.length
