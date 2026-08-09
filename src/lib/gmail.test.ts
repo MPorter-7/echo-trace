@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { MboxAnalyzer } from './mbox'
 import { GMAIL_EVIDENCE_QUERY, GMAIL_QUICK_SCAN_LIMIT, GMAIL_READONLY_SCOPE, parseGmailMessage } from './gmail'
@@ -19,6 +20,12 @@ describe('Quick Gmail Scan', () => {
     expect(GMAIL_EVIDENCE_QUERY).not.toContain('in:anywhere')
     expect(GMAIL_EVIDENCE_QUERY).not.toContain('"welcome to"')
     expect(GMAIL_EVIDENCE_QUERY).not.toMatch(/\breceipt\b|\binvoice\b/i)
+  })
+
+  it('does not request or retain the connected Gmail address', () => {
+    const implementation = readFileSync(new URL('./gmail.ts', import.meta.url), 'utf8')
+    expect(implementation).not.toContain("gmailFetch<GmailProfile>('/profile'")
+    expect(implementation).not.toContain('emailAddress:')
   })
 
   it('converts Gmail API messages into the existing local evidence analyzer', () => {
