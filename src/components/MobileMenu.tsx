@@ -9,7 +9,6 @@ interface MobileMenuProps {
 const navLinks = [
   { label: 'About', href: '#main' },
   { label: 'Security', href: '#security' },
-  { label: 'Download', href: '#features' },
 ]
 
 export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
