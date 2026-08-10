@@ -8,7 +8,7 @@ const productLinks = [
   { label: 'Overview', href: '#overview' },
   { label: 'Features', href: '#features' },
   { label: 'Security', href: '#security' },
-  { label: 'Download', href: '#features' },
+  { label: 'Download', href: '/dashboard/settings' },
 ]
 
 const socialLinks = [
@@ -85,13 +85,22 @@ export function Footer({ onRequestAccess }: FooterProps) {
             <ul className="space-y-3">
               {productLinks.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
-                    onClick={(e) => handleNavClick(e, link.href)}
-                    className="text-body-s text-ink hover:text-gold transition-colors duration-200"
-                  >
-                    {link.label}
-                  </a>
+                  {link.href.startsWith('#') ? (
+                    <a
+                      href={link.href}
+                      onClick={(e) => handleNavClick(e, link.href)}
+                      className="text-body-s text-ink hover:text-gold transition-colors duration-200"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      to={link.href}
+                      className="text-body-s text-ink hover:text-gold transition-colors duration-200"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
