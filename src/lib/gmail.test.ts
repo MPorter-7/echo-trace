@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { MboxAnalyzer } from './mbox'
-import { GMAIL_EVIDENCE_QUERY, GMAIL_QUICK_SCAN_LIMIT, GMAIL_READONLY_SCOPE, parseGmailMessage } from './gmail'
+import { GMAIL_ACCOUNT_PROMPT, GMAIL_EVIDENCE_QUERY, GMAIL_QUICK_SCAN_LIMIT, GMAIL_READONLY_SCOPE, parseGmailMessage } from './gmail'
 
 function encode(value: string) {
   return btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -20,6 +20,10 @@ describe('Quick Gmail Scan', () => {
     expect(GMAIL_EVIDENCE_QUERY).not.toContain('in:anywhere')
     expect(GMAIL_EVIDENCE_QUERY).not.toContain('"welcome to"')
     expect(GMAIL_EVIDENCE_QUERY).not.toMatch(/\breceipt\b|\binvoice\b/i)
+  })
+
+  it('always asks the user which Google account to scan', () => {
+    expect(GMAIL_ACCOUNT_PROMPT.split(/\s+/)).toEqual(expect.arrayContaining(['select_account', 'consent']))
   })
 
   it('does not request or retain the connected Gmail address', () => {

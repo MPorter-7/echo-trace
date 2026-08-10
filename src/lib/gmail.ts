@@ -2,6 +2,7 @@ import { MboxAnalyzer, type EmailHistoryAnalysis, type ParsedEmailMessage } from
 
 export const GMAIL_READONLY_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
 export const GMAIL_QUICK_SCAN_LIMIT = 5000
+export const GMAIL_ACCOUNT_PROMPT = 'select_account consent'
 
 const GMAIL_API_ROOT = 'https://gmail.googleapis.com/gmail/v1/users/me'
 const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client'
@@ -104,7 +105,9 @@ async function requestGmailToken(oauth: GoogleOauthApi, clientId: string) {
       },
       error_callback: () => reject(new Error('The Google permission window was closed or blocked.')),
     })
-    client.requestAccessToken({ prompt: 'consent' })
+    // Always let the user choose the mailbox. This prevents Google from silently
+    // reusing whichever account happens to be active in the browser.
+    client.requestAccessToken({ prompt: GMAIL_ACCOUNT_PROMPT })
   })
 }
 
