@@ -53,13 +53,12 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
             >
               Security
             </a>
-            <a
-              href="#features"
-              onClick={(e) => handleNavClick(e, '#features')}
+            <Link
+              to="/dashboard/settings"
               className="text-body-m text-current hover:text-cyan-300 transition-colors duration-200"
             >
               Download
-            </a>
+            </Link>
           </div>
 
           {/* Desktop CTA */}
@@ -109,7 +108,6 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
             {[
               { label: 'About', href: '#main' },
               { label: 'Security', href: '#security' },
-              { label: 'Download', href: '#features' },
             ].map((link) => (
               <a
                 key={link.label}
@@ -123,6 +121,13 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
                 {link.label}
               </a>
             ))}
+            <Link
+              to="/dashboard/settings"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-4xl font-semibold text-ink hover:text-gold transition-colors duration-200"
+            >
+              Download
+            </Link>
             <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-4xl font-semibold text-ink hover:text-gold">
               Sign in
             </Link>
