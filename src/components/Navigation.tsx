@@ -53,12 +53,6 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
             >
               Security
             </a>
-            <Link
-              to="/dashboard/settings"
-              className="text-body-m text-current hover:text-cyan-300 transition-colors duration-200"
-            >
-              Download
-            </Link>
           </div>
 
           {/* Desktop CTA */}
@@ -121,13 +115,6 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
                 {link.label}
               </a>
             ))}
-            <Link
-              to="/dashboard/settings"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-4xl font-semibold text-ink hover:text-gold transition-colors duration-200"
-            >
-              Download
-            </Link>
             <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-4xl font-semibold text-ink hover:text-gold">
               Sign in
             </Link>
