@@ -8,7 +8,6 @@ const productLinks = [
   { label: 'Overview', href: '#overview' },
   { label: 'Features', href: '#features' },
   { label: 'Security', href: '#security' },
-  { label: 'Download', href: '/dashboard/settings' },
 ]
 
 const socialLinks = [
