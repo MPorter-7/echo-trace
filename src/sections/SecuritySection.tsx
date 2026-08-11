@@ -102,7 +102,7 @@ export function SecuritySection() {
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           {/* Left - text */}
           <div ref={textRef} className="lg:w-1/2">
-            <SectionLabel text="05 / SECURITY" />
+            <SectionLabel text="06 / SECURITY" />
             <h2
               className="text-3xl md:text-5xl lg:text-display-xl font-semibold text-ink mt-3 mb-6"
               style={{ letterSpacing: '-0.02em', lineHeight: '0.95' }}
