@@ -69,7 +69,7 @@ export function EmailHistoryPage() {
 
   const analyze = async (event: FormEvent) => {
     event.preventDefault()
-    if (!file) return toast.error('Choose a Google Takeout .mbox file first.')
+    if (!file) return toast.error('Choose an exported .mbox file first.')
     if (!ownsMailbox) return toast.error('Confirm that this is your mailbox and part of your own digital history.')
     const validation = validateMboxFile(file)
     if (!validation.valid) return toast.error(validation.error)
@@ -281,15 +281,15 @@ export function EmailHistoryPage() {
       <PageHeader
         eyebrow="Private evidence recovery"
         title="Find my accounts"
-        description="Connect Gmail once. EchoTrace checks high-signal account emails, removes spam-like results, and combines duplicate service senders automatically."
+        description="Recover accounts from any supported email export, or use the optional Gmail shortcut. EchoTrace analyzes messages privately, removes spam-like results, and saves only findings you approve."
       />
 
       <section className="border border-ink/10 bg-charcoal p-7 text-bone lg:p-10">
         <div className="grid items-center gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <div>
             <p className="flex items-center gap-2 text-label uppercase text-gold"><Zap size={15} />Fastest option</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight">Scan Gmail in one step</h2>
-            <p className="mt-4 max-w-2xl text-body-s leading-relaxed text-bone/65">Click once, choose your Google account, and approve read-only access. EchoTrace checks high-signal account emails, cleans the results, and then disconnects automatically.</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">Optional shortcut: scan Gmail</h2>
+            <p className="mt-4 max-w-2xl text-body-s leading-relaxed text-bone/65">If you use Gmail, click once, choose your Google account, and approve temporary read-only access. You can skip this and upload an email export from another provider below.</p>
             <button type="button" onClick={() => void scanGmail()} disabled={analyzing || !googleClientId || !gmailReady} className={`${primaryButtonClass} mt-7`}>
               <MailCheck size={18} className="mr-2" />
               {analyzing ? 'Scanning Gmail…' : googleClientId && !gmailReady ? 'Preparing Gmail…' : 'Connect Gmail & scan'}
@@ -306,17 +306,17 @@ export function EmailHistoryPage() {
 
       <details className="group mt-5 border border-ink/10 bg-white">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-body-s font-medium">
-          <span>Advanced option: upload an email export</span>
+          <span>Use any email provider: upload an email export</span>
           <ChevronDown size={18} className="transition group-open:rotate-180" />
         </summary>
         <div className="grid gap-7 border-t border-ink/10 p-6 lg:grid-cols-[0.75fr_1.25fr] lg:p-8">
           <div>
-            <p className="text-label uppercase text-gold">Google Takeout fallback</p>
-            <p className="mt-3 text-body-s leading-relaxed text-ink/55">Use this only if you prefer a file or cannot connect Gmail. Select Mail in Google Takeout, download the export, and choose the extracted `.mbox`.</p>
-            <a href="https://takeout.google.com/settings/takeout" target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-body-s text-ink underline decoration-gold underline-offset-4">Open Google Takeout <ArrowUpRight size={15} /></a>
+            <p className="text-label uppercase text-gold">Gmail is not required</p>
+            <p className="mt-3 text-body-s leading-relaxed text-ink/55">Upload a `.mbox` export from Yahoo, Proton Mail, Apple Mail, Thunderbird, Google Takeout, or another provider. Outlook exports may need to be converted from `.pst` to `.mbox` first. The file stays on this device; only findings you select are saved.</p>
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-body-s"><a href="https://support.google.com/accounts/answer/3024190" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-ink underline decoration-gold underline-offset-4">Google export help <ArrowUpRight size={15} /></a><a href="https://proton.me/support/proton-mail-export-tool" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-ink underline decoration-gold underline-offset-4">Proton export help <ArrowUpRight size={15} /></a></div>
           </div>
           <form onSubmit={analyze} className="border border-ink/10 bg-bone p-6">
-            <label htmlFor="mbox-upload" className="text-body-s font-medium">Choose extracted `.mbox` file</label>
+            <label htmlFor="mbox-upload" className="text-body-s font-medium">Choose your exported `.mbox` file</label>
             <input id="mbox-upload" type="file" required accept=".mbox,application/mbox" onChange={(event) => { setFile(event.target.files?.[0] ?? null); setAnalysis(null); setAnalysisSource(null); setSelectedDomains(new Set()); setProgress(0) }} className="mt-3 block w-full border border-ink/15 bg-white px-3 py-3 text-body-s text-ink file:mr-4 file:border-0 file:bg-ink file:px-3 file:py-2 file:text-bone" />
             <label className="mt-5 flex items-start gap-3 border border-ink/10 bg-white p-4 text-body-s text-ink/65">
               <input type="checkbox" checked={ownsMailbox} onChange={(event) => setOwnsMailbox(event.target.checked)} className="mt-1 h-4 w-4 accent-gold" />
@@ -350,7 +350,7 @@ export function EmailHistoryPage() {
             <div className="mt-4 border border-ink/10 bg-bone p-4 text-body-s text-ink/55"><p>{formatDate(finding.first_seen)}{finding.last_seen && finding.last_seen !== finding.first_seen ? ` – ${formatDate(finding.last_seen)}` : ''}</p><p className="mt-1 truncate">Import: {importNames.get(finding.import_id) ?? 'Deleted import'}</p><p className="mt-1 text-micro">Stored summary only; no email body or subject is stored.</p></div>
             <div className="mt-5 flex flex-wrap gap-2"><button type="button" disabled={finding.status === 'accepted'} onClick={() => void setStatus(finding, 'accepted')} className={secondaryButtonClass}><Check size={15} className="mr-1" />Accept</button><button type="button" disabled={finding.status === 'uncertain'} onClick={() => void setStatus(finding, 'uncertain')} className={secondaryButtonClass}><CircleHelp size={15} className="mr-1" />Uncertain</button><button type="button" disabled={finding.status === 'rejected'} onClick={() => void setStatus(finding, 'rejected')} className={`${secondaryButtonClass} text-red-700`}><X size={15} className="mr-1" />Reject</button>{finding.status === 'accepted' && !finding.timeline_event_id && <button type="button" onClick={() => void addToTimeline(finding)} className={primaryButtonClass}><History size={15} className="mr-1" />Add to timeline</button>}{finding.timeline_event_id && <span className="inline-flex items-center rounded-pill bg-emerald-50 px-4 py-2 text-body-s text-emerald-800"><Check size={15} className="mr-1" />Added to timeline</span>}</div>
           </article>
-        ))}</div> : <div className="mt-5"><EmptyState title="No email-history findings saved" description="Connect Gmail above, review the results, and choose which summaries EchoTrace may save." /></div>}
+        ))}</div> : <div className="mt-5"><EmptyState title="No email-history findings saved" description="Use the optional Gmail scan or upload an .mbox export, then choose which summaries EchoTrace may save." /></div>}
       </section>
 
       {imports.length > 0 && <section className="mt-10 border border-ink/10 bg-white p-6"><p className="text-label uppercase text-gold">Import records</p><div className="mt-4 divide-y divide-ink/10">{imports.map((item) => <div key={item.id} className="flex flex-col justify-between gap-3 py-4 sm:flex-row sm:items-center"><div className="flex min-w-0 items-center gap-3"><FileArchive className="shrink-0 text-gold" /><div className="min-w-0"><p className="truncate font-medium">{item.original_name}</p><p className="text-body-s text-ink/45">{item.messages_scanned.toLocaleString()} scanned · {item.findings_count} saved · {new Date(item.created_at).toLocaleDateString()}</p></div></div><button type="button" onClick={() => void removeImport(item)} className="inline-flex items-center text-body-s text-red-700 hover:underline"><Trash2 size={15} className="mr-1" />Delete saved summary</button></div>)}</div></section>}
