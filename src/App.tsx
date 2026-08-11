@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { Toaster } from 'sonner'
 import { AuthProvider } from './auth/AuthContext'
+import { BillingProvider } from './billing/BillingContext'
 import { Home } from './pages/Home'
 import { ProtectedRoute, PublicOnlyRoute } from './auth/RouteGuards'
 
@@ -21,6 +22,7 @@ const ArchivePage = lazy(() => import('./pages/dashboard/ArchivePage').then((mod
 const SettingsPage = lazy(() => import('./pages/dashboard/SettingsPage').then((module) => ({ default: module.SettingsPage })))
 const PrivacyPage = lazy(() => import('./pages/LegalPages').then((module) => ({ default: module.PrivacyPage })))
 const TermsPage = lazy(() => import('./pages/LegalPages').then((module) => ({ default: module.TermsPage })))
+const BillingCompletePage = lazy(() => import('./pages/BillingCompletePage').then((module) => ({ default: module.BillingCompletePage })))
 
 function RouteLoading() {
   return <div className="grid min-h-screen place-items-center bg-bone text-body-s text-ink/55" role="status">Loading EchoTrace…</div>
@@ -30,6 +32,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <BillingProvider>
         <Suspense fallback={<RouteLoading />}><Routes>
           <Route path="/" element={<Home />} />
           <Route element={<PublicOnlyRoute />}>
@@ -42,6 +45,7 @@ export default function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route element={<ProtectedRoute />}>
+            <Route path="/billing/complete" element={<BillingCompletePage />} />
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
               <Route path="reconstruct" element={<ReconstructionPage />} />
@@ -56,6 +60,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes></Suspense>
         <Toaster richColors position="top-right" closeButton />
+        </BillingProvider>
       </AuthProvider>
     </BrowserRouter>
   )

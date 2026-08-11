@@ -1,6 +1,6 @@
-import { Link } from 'react-router'
 import { Check } from 'lucide-react'
 import { SectionLabel } from '../components/SectionLabel'
+import { PlanButton } from '../billing/PlanButton'
 
 const plans = [
   {
@@ -17,7 +17,7 @@ const plans = [
     price: '$19.99',
     cadence: 'one-time',
     description: 'Unlock your complete recovery without adding another subscription.',
-    features: ['Full scan results', 'Complete visual timeline', 'JSON and CSV exports', 'Evidence uploads and recovery report'],
+    features: ['Everything in Free', 'Full scan results and complete timeline', 'JSON and CSV exports', 'Evidence uploads and recovery report'],
     cta: 'Unlock recovery',
     featured: true,
   },
@@ -26,7 +26,7 @@ const plans = [
     price: '$7.99',
     cadence: 'per month',
     description: 'Keep your recovered history organized, private, and available over time.',
-    features: ['Private long-term storage', 'Continued scans', 'Advanced organization', 'Expanded file storage'],
+    features: ['Everything in Recovery while active', 'Private long-term storage', 'Continued scans and advanced organization', 'Expanded file storage'],
     cta: 'Choose Vault',
     featured: false,
   },
@@ -82,8 +82,8 @@ export function PricingSection() {
                   </li>
                 ))}
               </ul>
-              <Link
-                to="/signup"
+              <PlanButton
+                plan={plan.name.toLowerCase() as 'free' | 'recovery' | 'vault'}
                 className={`mt-8 inline-flex min-h-11 items-center justify-center rounded-pill border px-5 py-3 text-body-s font-semibold transition-colors ${
                   plan.featured
                     ? 'border-cyan-300 bg-cyan-300 text-[#02101f] hover:bg-white'
@@ -91,7 +91,7 @@ export function PricingSection() {
                 }`}
               >
                 {plan.cta}
-              </Link>
+              </PlanButton>
             </article>
           ))}
         </div>
