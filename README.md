@@ -11,7 +11,7 @@ The existing public landing page and Supabase waitlist remain at `/`. Authentica
 - Supabase email/password signup, email verification, login, logout, reset, persistent sessions, and protected routes
 - Required self-recovery consent with a versioned audit record
 - Evidence-first reconstruction onboarding that begins with the verified signup email and keeps manual memories optional
-- One-click, temporary read-only Gmail scan with automatic Spam/Trash/Sent exclusion, duplicate-service merging, and weak-result filtering; an advanced Google Takeout `.mbox` fallback remains available, and both methods save only user-approved aggregate findings
+- Optional one-click, temporary read-only Gmail scan plus provider-neutral `.mbox` imports from Yahoo, Proton Mail, Apple Mail, Thunderbird, Google Takeout, and other compatible exports; both paths run in the browser and save only user-approved aggregate findings
 - Private identifiers with clear separation between verified account email and unverified historical emails
 - Timeline CRUD with exact, month/year, year-only, and unknown dates; search, filters, sorting, and two views
 - User-reviewed possible matches with sources, retrieval dates, status controls, and deterministic confidence explanations
@@ -56,5 +56,5 @@ See [SETUP.md](SETUP.md), [SECURITY.md](SECURITY.md), and [TESTING.md](TESTING.m
 - Facial recognition, phone lookup, or location tracking
 - Paid APIs and AI scoring
 - Background processing and approved source APIs (the connector boundary is ready for later additions)
-- Additional mailbox providers and formats
+- Native `.pst`, `.eml`, and provider-specific archive formats (convert to `.mbox` before import)
 - Legal approval of the MVP privacy and terms drafts
