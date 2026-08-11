@@ -81,4 +81,17 @@ describe('Quick Gmail Scan', () => {
     })
     expect(parsed.bodySample).toBe('New sign-in from a device')
   })
+
+  it('handles large and malformed HTML without evaluating hidden content', () => {
+    const parsed = parseGmailMessage({
+      payload: {
+        mimeType: 'text/html',
+        body: {
+          data: encode(`<style>${'x'.repeat(10_000)}</style><p>Account activated</p><script>${'y'.repeat(10_000)}</script><div`),
+        },
+      },
+    })
+
+    expect(parsed.bodySample).toBe('Account activated')
+  })
 })

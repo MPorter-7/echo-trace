@@ -9,6 +9,7 @@ const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client'
 export const GMAIL_EVIDENCE_QUERY = '-in:spam -in:trash -in:sent -in:drafts -category:promotions {subject:"verify your email" subject:"verify your e-mail" subject:"confirm your email" subject:"confirm your registration" subject:"activate your account" subject:"account created" subject:"registration complete" subject:"password reset" subject:"reset your password" subject:"password changed" subject:"security alert" subject:"account notice" subject:"new sign-in" subject:"new login" subject:"verification code" subject:"one-time code"}'
 const BODY_SAMPLE_LIMIT = 24 * 1024
 const FETCH_CONCURRENCY = 8
+const HIDDEN_HTML_ELEMENTS = new Set(['script', 'style', 'template', 'noscript'])
 
 interface GoogleTokenResponse {
   access_token?: string
@@ -136,14 +137,58 @@ function decodeBase64Url(value: string) {
   }
 }
 
+function htmlTagName(tag: string) {
+  let index = 0
+  while (index < tag.length && (tag[index] === '/' || tag[index] === '!' || tag[index] === '?' || tag[index] === ' ')) index += 1
+  const start = index
+  while (index < tag.length) {
+    const code = tag.charCodeAt(index)
+    const isNameCharacter = (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 48 && code <= 57)
+    if (!isNameCharacter) break
+    index += 1
+  }
+  return tag.slice(start, index).toLowerCase()
+}
+
+function htmlToPlainText(html: string) {
+  let output = ''
+  let index = 0
+  let hiddenElement = ''
+
+  while (index < html.length) {
+    if (html[index] !== '<') {
+      if (!hiddenElement) output += html[index]
+      index += 1
+      continue
+    }
+
+    const tagEnd = html.indexOf('>', index + 1)
+    if (tagEnd === -1) break
+
+    const tag = html.slice(index + 1, tagEnd)
+    const tagName = htmlTagName(tag)
+    const isClosingTag = tag.trimStart().startsWith('/')
+
+    if (hiddenElement) {
+      if (isClosingTag && tagName === hiddenElement) hiddenElement = ''
+    } else if (!isClosingTag && HIDDEN_HTML_ELEMENTS.has(tagName)) {
+      hiddenElement = tagName
+    } else {
+      output += ' '
+    }
+
+    index = tagEnd + 1
+  }
+
+  return output.replace(/\s+/g, ' ').trim()
+}
+
 function plainTextFromPart(part: GmailPart): string {
   const children = part.parts ?? []
   const childText = children.map(plainTextFromPart).filter(Boolean).join('\n')
   const ownText = part.body?.data ? decodeBase64Url(part.body.data) : ''
   if (part.mimeType === 'text/plain') return `${ownText}\n${childText}`.trim()
-  if (part.mimeType === 'text/html' && !childText) {
-    return ownText.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-  }
+  if (part.mimeType === 'text/html' && !childText) return htmlToPlainText(ownText)
   return childText || ownText
 }
 
