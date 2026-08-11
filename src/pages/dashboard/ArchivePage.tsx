@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toast } from 'sonner'
 import { useAuth } from '../../auth/AuthContext'
+import { useBilling } from '../../billing/BillingContext'
 import { EmptyState, Modal, PageHeader } from '../../components/DashboardUI'
 import { Field, inputClass, primaryButtonClass, secondaryButtonClass } from '../../components/FormFields'
 import { formatBytes, safeStorageName, validateArchiveFile } from '../../lib/files'
@@ -11,6 +12,7 @@ import type { ArchiveFile, TimelineEvent } from '../../types/echo'
 
 export function ArchivePage() {
   const { user } = useAuth()
+  const { plan } = useBilling()
   const [files, setFiles] = useState<ArchiveFile[]>([])
   const [events, setEvents] = useState<TimelineEvent[]>([])
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -36,6 +38,7 @@ export function ArchivePage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
+    if (plan === 'free') return toast.error('Evidence uploads require Recovery or Vault.')
     if (!supabase || !user || !file) return toast.error('Choose a file.')
     const validation = validateArchiveFile(file)
     if (!validation.valid) return toast.error(validation.error)
@@ -80,7 +83,7 @@ export function ArchivePage() {
 
   return (
     <>
-      <PageHeader eyebrow="Private supporting evidence" title="Personal archive" description="Upload screenshots and files to a private bucket isolated by your user ID. Files are limited to 10 MB and are never public." action={<button type="button" onClick={() => setUploadOpen(true)} className={primaryButtonClass}><Upload size={17} className="mr-2" />Upload file</button>} />
+      <PageHeader eyebrow="Private supporting evidence" title="Personal archive" description="Upload screenshots and files to a private bucket isolated by your user ID. Files are limited to 10 MB and are never public." action={<button type="button" onClick={() => plan === 'free' ? toast.info('Evidence uploads require Recovery or Vault.') : setUploadOpen(true)} className={primaryButtonClass}><Upload size={17} className="mr-2" />Upload file</button>} />
       <div className="mb-6 border border-ink/10 bg-white p-4 text-body-s text-ink/60">Allowed: JPG, PNG, WebP, GIF, PDF, TXT, JSON, and CSV · Maximum 10 MB · Private signed downloads expire after 60 seconds</div>
       {loading ? <div className="h-64 animate-pulse bg-white" /> : files.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{files.map((item) => <article key={item.id} className="border border-ink/10 bg-white p-6"><div className="flex items-start justify-between gap-4"><div className="grid h-11 w-11 place-items-center rounded bg-mist"><File size={22} className="text-gold" /></div><span className="text-micro uppercase text-ink/40">{item.mime_type.split('/').pop()}</span></div><h2 className="mt-5 truncate font-semibold" title={item.original_name}>{item.original_name}</h2><p className="mt-1 text-body-s text-ink/45">{formatBytes(item.size_bytes)} · {new Date(item.created_at).toLocaleDateString()}</p>{item.description && <p className="mt-3 line-clamp-2 text-body-s text-ink/60">{item.description}</p>}<div className="mt-5 flex flex-wrap gap-2">{(item.mime_type.startsWith('image/') || item.mime_type === 'application/pdf' || item.mime_type.startsWith('text/')) && <button type="button" onClick={() => void preview(item)} className={secondaryButtonClass}><Eye size={15} className="mr-1" />Preview</button>}<button type="button" onClick={() => void download(item)} className={secondaryButtonClass}><Download size={15} className="mr-1" />Download</button><button type="button" onClick={() => setLinking(item)} className={secondaryButtonClass}><Link2 size={15} className="mr-1" />Link</button><button type="button" onClick={() => void remove(item)} className="rounded p-2 text-red-700 hover:bg-red-50" aria-label={`Delete ${item.original_name}`}><Trash2 size={17} /></button></div></article>)}</div> : <EmptyState title="Your private archive is empty" description="Add a screenshot, image, PDF, text note, JSON export, or CSV export that supports your timeline." action={<button type="button" onClick={() => setUploadOpen(true)} className={primaryButtonClass}><Plus size={16} className="mr-2" />Upload first file</button>} />}
       {uploadOpen && <Modal title="Upload private file" description="The file will be stored in a private, owner-isolated Supabase bucket." onClose={() => setUploadOpen(false)}><form onSubmit={submit} className="space-y-5"><Field label="Choose file" htmlFor="archive-upload"><input id="archive-upload" type="file" required accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,application/json,text/csv,.csv" onChange={(event) => setFile(event.target.files?.[0] ?? null)} className={`${inputClass} file:mr-4 file:border-0 file:bg-mist file:px-3 file:py-2`} /></Field><Field label="Description (optional)" htmlFor="file-description"><textarea id="file-description" rows={3} value={description} onChange={(event) => setDescription(event.target.value)} className={inputClass} /></Field><div className="flex justify-end gap-3"><button type="button" onClick={() => setUploadOpen(false)} className={secondaryButtonClass}>Cancel</button><button type="submit" disabled={uploading} className={primaryButtonClass}>{uploading ? 'Encrypting and uploading…' : 'Upload privately'}</button></div></form></Modal>}
