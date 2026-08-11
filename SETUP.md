@@ -26,11 +26,11 @@ This is a production database action. Review the SQL first and make a Supabase b
 
 1. Open **Supabase → SQL Editor → New query**.
 2. For a fresh project, run every file in `supabase/migrations` in filename order.
-3. For a project that already ran `202608030001_echotrace_mvp.sql`, run each newer migration it has not yet applied, in filename order. Email History Upload adds `202608040002_email_history_upload.sql`; Quick Gmail Scan adds `202608040003_gmail_quick_scan.sql`.
+3. For a project that already ran `202608030001_echotrace_mvp.sql`, run each newer migration it has not yet applied, in filename order. Email History Upload adds `202608040002_email_history_upload.sql`; Quick Gmail Scan adds `202608040003_gmail_quick_scan.sql`. The same upload flow accepts provider-neutral `.mbox` exports and requires no additional API configuration.
 4. Confirm the existing `waitlist` table and its anonymous insert policy still exist.
 5. Confirm the `private-archives` Storage bucket is marked private.
 
-The base migration creates private application tables, constraints, indexes, timestamps, owner-only RLS policies, Storage policies, a profile trigger, and a delete-my-data function. The forward migrations repair that function and add owner-isolated aggregate email-import records. The raw `.mbox` is processed locally and never placed in Storage. The migrations can be rerun safely.
+The base migration creates private application tables, constraints, indexes, timestamps, owner-only RLS policies, Storage policies, a profile trigger, and a delete-my-data function. The forward migrations repair that function and add owner-isolated aggregate email-import records. The raw `.mbox` export—whether from Yahoo, Proton Mail, Apple Mail, Thunderbird, Google Takeout, or another compatible source—is processed locally and never placed in Storage. Outlook `.pst` exports must be converted to `.mbox` before import. The migrations can be rerun safely.
 
 ## 3. Configure Supabase Authentication
 
@@ -89,5 +89,5 @@ Redeploy after saving. `vercel.json` rewrites client routes such as `/dashboard/
 3. Test login, logout, forgot password, and password reset.
 4. Accept the self-recovery consent.
 5. Complete the two-user RLS test in TESTING.md.
-6. Test identifier, Quick Gmail Scan, advanced `.mbox` upload, timeline, match, archive, export, and deletion flows. Verify Gmail content is requested only from `gmail.googleapis.com`, raw `.mbox` data is never sent, and only selected aggregate findings reach Supabase. For delete-all, simulate a failed Storage request and confirm database records remain.
+6. Test identifier, optional Quick Gmail Scan, provider-neutral `.mbox` upload, timeline, match, archive, export, and deletion flows. Verify Gmail content is requested only from `gmail.googleapis.com`, raw `.mbox` data is never sent, and only selected aggregate findings reach Supabase. For delete-all, simulate a failed Storage request and confirm database records remain.
 7. Confirm `/privacy`, `/terms`, and direct dashboard URLs load on Vercel.
