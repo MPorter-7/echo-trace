@@ -7,6 +7,7 @@ import { Footer } from '../sections/Footer'
 import { HeroClip } from '../sections/HeroClip'
 import { MainSection } from '../sections/MainSection'
 import { OverviewSection } from '../sections/OverviewSection'
+import { PricingSection } from '../sections/PricingSection'
 import { SecuritySection } from '../sections/SecuritySection'
 import { StatsSection } from '../sections/StatsSection'
 
@@ -23,6 +24,7 @@ export function Home() {
         <OverviewSection />
         <FeaturesSection />
         <StatsSection />
+        <PricingSection />
         <SecuritySection />
       </main>
       <Footer onRequestAccess={() => setAccessOpen(true)} />

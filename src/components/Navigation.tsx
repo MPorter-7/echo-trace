@@ -47,6 +47,13 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
               About
             </a>
             <a
+              href="#pricing"
+              onClick={(e) => handleNavClick(e, '#pricing')}
+              className="text-body-m text-current hover:text-cyan-300 transition-colors duration-200"
+            >
+              Pricing
+            </a>
+            <a
               href="#security"
               onClick={(e) => handleNavClick(e, '#security')}
               className="text-body-m text-current hover:text-cyan-300 transition-colors duration-200"
@@ -101,6 +108,7 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
           <div className="flex flex-col gap-8">
             {[
               { label: 'About', href: '#main' },
+              { label: 'Pricing', href: '#pricing' },
               { label: 'Security', href: '#security' },
             ].map((link) => (
               <a
