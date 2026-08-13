@@ -4,6 +4,28 @@ import { adminClient, assertRequest, authenticatedUser, corsHeaders, HttpError, 
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '')
 
+function checkoutErrorMessage(error: unknown) {
+  if (error instanceof HttpError) return error.message
+  if (!(error instanceof Error)) return 'Checkout could not be started.'
+
+  // Stripe's raw message can contain account-specific object IDs. Return only
+  // a short, actionable diagnostic that is safe to show to the signed-in user.
+  const message = error.message.toLowerCase()
+  if (message.includes('invalid api key') || message.includes('api key provided')) {
+    return 'Stripe rejected the saved secret key. In Supabase, replace STRIPE_SECRET_KEY with your Stripe Test-mode key (sk_test_…).'
+  }
+  if (message.includes('no such price') || message.includes('price') && message.includes('does not exist')) {
+    return 'Stripe cannot find this plan price. Make sure the Stripe secret key and this plan’s Price ID are both from Test mode.'
+  }
+  if (message.includes('test mode') || message.includes('live mode')) {
+    return 'Stripe Test mode and Live mode are mixed. Use a Stripe Test-mode secret key with Test-mode Price IDs.'
+  }
+  if (message.includes('not activated') || message.includes('capabilities')) {
+    return 'Stripe cannot accept payments for this account yet. Finish the required Stripe account activation steps.'
+  }
+  return 'Stripe could not start checkout. Check the Stripe account setup and try again.'
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request) })
   try {
@@ -13,7 +35,7 @@ Deno.serve(async (request) => {
     if (plan !== 'recovery' && plan !== 'vault') throw new HttpError(400, 'Choose a valid plan.')
 
     const priceId = Deno.env.get(plan === 'recovery' ? 'STRIPE_RECOVERY_PRICE_ID' : 'STRIPE_VAULT_PRICE_ID')
-    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://echo-trace-eight.vercel.app'
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://echo-trace.com'
     if (!priceId || !Deno.env.get('STRIPE_SECRET_KEY')) throw new HttpError(500, 'Billing is not configured.')
 
     const admin = adminClient()
@@ -44,7 +66,13 @@ Deno.serve(async (request) => {
     return json(request, 200, { url: session.url })
   } catch (error) {
     const status = error instanceof HttpError ? error.status : 500
-    console.error('create-checkout failed', error instanceof Error ? error.message : 'Unknown error')
-    return json(request, status, { error: error instanceof HttpError ? error.message : 'Checkout could not be started.' })
+    const stripeError = error as { type?: unknown; code?: unknown; requestId?: unknown }
+    console.error('create-checkout failed', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      type: typeof stripeError.type === 'string' ? stripeError.type : undefined,
+      code: typeof stripeError.code === 'string' ? stripeError.code : undefined,
+      requestId: typeof stripeError.requestId === 'string' ? stripeError.requestId : undefined,
+    })
+    return json(request, status, { error: checkoutErrorMessage(error) })
   }
 })
