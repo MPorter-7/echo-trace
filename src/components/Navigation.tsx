@@ -33,8 +33,12 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
       >
         <div className="w-full max-w-content mx-auto px-5 md:px-10 lg:px-20 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="text-heading-m font-semibold text-current">
-            EchoTrace
+          <Link to="/" className="block h-12 w-44 overflow-hidden rounded-sm" aria-label="EchoTrace home">
+            <img
+              src="/images/brand/echotrace-logo.png"
+              alt="EchoTrace"
+              className="h-full w-full object-cover object-top-left"
+            />
           </Link>
 
           {/* Desktop Nav Links */}
