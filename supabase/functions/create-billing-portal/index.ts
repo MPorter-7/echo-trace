@@ -11,7 +11,7 @@ Deno.serve(async (request) => {
     const user = await authenticatedUser(request)
     const { data } = await adminClient().from('billing_entitlements').select('stripe_customer_id').eq('user_id', user.id).maybeSingle()
     if (!data?.stripe_customer_id) throw new HttpError(404, 'No billing account was found.')
-    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://echo-trace-eight.vercel.app'
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://echo-trace.com'
     const portal = await stripe.billingPortal.sessions.create({ customer: data.stripe_customer_id, return_url: `${siteUrl}/dashboard/settings` })
     return json(request, 200, { url: portal.url })
   } catch (error) {
