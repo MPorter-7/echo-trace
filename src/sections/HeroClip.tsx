@@ -56,7 +56,7 @@ export function HeroClip() {
             Reclaim your digital history.
           </h1>
           <p className="mt-7 max-w-[560px] text-lg leading-relaxed text-slate-200 md:text-xl">
-            Reconstruct the scattered accounts, memories, and milestones that shaped your online life—privately, transparently, and on your terms.
+            EchoTrace is a privacy-first personal digital-history recovery app. It helps you find and organize your own accounts, email-history clues, memories, and traceable public records—privately, transparently, and on your terms.
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
