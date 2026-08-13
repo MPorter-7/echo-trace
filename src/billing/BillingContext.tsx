@@ -41,7 +41,15 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
   const invoke = useCallback(async (name: string, body?: Record<string, unknown>) => {
     if (!supabase) throw new Error('Payments are not configured.')
     const { data, error } = await supabase.functions.invoke(name, { method: 'POST', body })
-    if (error) throw new Error((data as { error?: string } | null)?.error ?? 'The billing request failed.')
+    if (error) {
+      const response = (error as { context?: Response }).context
+      let detail: { error?: string } | null = data as { error?: string } | null
+      if (!detail?.error && response) {
+        try { detail = await response.clone().json() as { error?: string } }
+        catch { /* Keep the safe fallback below when no JSON response is available. */ }
+      }
+      throw new Error(detail?.error ?? 'The billing request failed.')
+    }
     const url = (data as { url?: string } | null)?.url
     if (!url) throw new Error('The billing page could not be opened.')
     return url
