@@ -1,6 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.100.0'
 
 export const allowedOrigins = new Set([
+  'https://echo-trace.com',
+  'https://www.echo-trace.com',
   'https://echo-trace-eight.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',
