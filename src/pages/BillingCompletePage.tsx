@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { useBilling } from '../billing/BillingContext'
+import { supabase } from '../lib/supabase'
 
 export function BillingCompletePage() {
   const [params] = useSearchParams()
@@ -17,6 +18,13 @@ export function BillingCompletePage() {
     }
     if (!sessionId) { setMessage('No payment was found.'); return }
 
+    const confirm = async () => {
+      if (!supabase) return
+      const { error } = await supabase.functions.invoke('confirm-checkout', { method: 'POST', body: { session_id: sessionId } })
+      if (error) return
+      await refresh()
+    }
+    void confirm()
     let attempts = 0
     const poll = async () => {
       attempts += 1
