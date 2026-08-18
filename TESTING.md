@@ -10,7 +10,7 @@ npm test
 npm run build
 ```
 
-Unit tests cover authentication redirect decisions, email-first reconstruction state, Gmail message conversion and mailbox exclusions, streamed `.mbox` parsing, evidence classification, duplicate-service merging, weak/spam result cleanup (including a 623-result regression fixture), identifier and timeline validation, deterministic confidence scoring, mutually exclusive evidence, date-range conversion, partial attachment failures, storage-first deletion sequencing, URL normalization, CSV quoting, file restrictions, and the ownership rule expected by RLS.
+Unit tests cover authentication redirect decisions, email-first reconstruction state, streamed `.mbox` parsing, evidence classification, duplicate-service merging, weak/spam result cleanup (including a 623-result regression fixture), identifier and timeline validation, deterministic confidence scoring, mutually exclusive evidence, date-range conversion, partial attachment failures, storage-first deletion sequencing, URL normalization, CSV quoting, file restrictions, and the ownership rule expected by RLS.
 
 ## Manual authentication tests
 
@@ -38,9 +38,8 @@ Use two separate private browser profiles.
 ## Feature checks
 
 - Reconstruction: confirmed signup email appears without re-entry; missing verified identifier repairs only for the authenticated email; the primary action opens Find My Accounts; readiness changes with identifiers, imports, and findings
-- Quick Gmail Scan: connect a test Gmail account; approve only `gmail.readonly`; verify the scan disconnects afterward; confirm Spam/Trash/Sent/Drafts and weak receipt-only senders are absent; confirm related sender subdomains are merged; confirm nothing is saved before approval; save approved aggregate findings; refresh; accept/reject/uncertain; add one accepted finding to the timeline; delete an import summary
 - Provider-neutral email export: reject empty/non-`.mbox` files; analyze representative Google Takeout, Yahoo, Proton Mail, Apple Mail, or Thunderbird `.mbox` fixtures; verify progress and local-only subject examples; confirm Outlook `.pst` is rejected with conversion guidance
-- Email-history privacy: use browser network tools to confirm Gmail content travels only between the browser and Google, every provider's raw `.mbox` remains on-device, and only selected aggregate rows reach Supabase
+- Email-history privacy: use browser network tools to confirm every provider's raw `.mbox` remains on-device and only selected aggregate rows reach Supabase
 - Identifiers: create, edit, duplicate prevention, delete, URL/email validation, historical email label
 - Timeline: all date precisions, required month selection, CRUD, failed archive attachment reporting, search, platform/type/confidence filters, both sorts, both views, source URL
 - Matches: guided links, case-sensitive URL path/query preservation, duplicate URL prevention, mutually exclusive scoring signals, explanations, accept/reject/uncertain, accepted date-range conversion
@@ -52,4 +51,4 @@ Use two separate private browser profiles.
 
 ## What cannot be verified offline
 
-Email delivery, live Auth redirects, Google OAuth/Gmail API access, production RLS, Storage isolation, Vercel environment values, and the public waitlist require configured deployments. Do not report these as working until the post-deploy checks in SETUP.md pass.
+Email delivery, live Auth redirects, production RLS, Storage isolation, Vercel environment values, and the public waitlist require configured deployments. Do not report these as working until the post-deploy checks in SETUP.md pass.
