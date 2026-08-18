@@ -86,8 +86,8 @@ export function ReconstructionPage() {
       action: { to: '/dashboard/identifiers', label: 'Add an old email or username' },
     },
     {
-      title: 'Scan your Gmail',
-      description: 'Connect once with read-only access. EchoTrace checks likely account emails, then disconnects automatically.',
+      title: 'Import your email history',
+      description: 'Export your own mailbox, then let EchoTrace check it locally for likely account emails.',
       complete: counts.archiveFiles > 0 || counts.emailImports > 0,
       icon: Zap,
       action: { to: '/dashboard/email-history', label: 'Find my accounts' },
@@ -118,12 +118,12 @@ export function ReconstructionPage() {
             <div className="flex items-center gap-3 text-body-s text-bone/55"><MailCheck size={18} className="text-gold" />Verified account email</div>
             <p className="mt-3 break-all text-xl font-medium">{loading ? 'Loading your secure clue…' : startingEmail ?? 'No verified email found'}</p>
           </div>
-          <p className="mt-5 max-w-2xl text-body-s leading-relaxed text-bone/60">Your address is the starting clue. Connect Gmail once and EchoTrace will check for signup messages, receipts, password resets, and account notices you may not remember.</p>
+          <p className="mt-5 max-w-2xl text-body-s leading-relaxed text-bone/60">Your address is the starting clue. Import an email export and EchoTrace will check locally for signup messages, receipts, password resets, and account notices you may not remember.</p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link to="/dashboard/email-history" className={primaryButtonClass}>Find my accounts <ArrowRight size={16} className="ml-2" /></Link>
             <Link to="/dashboard/archive" className="inline-flex items-center justify-center rounded-pill border border-bone/30 px-5 py-3 text-body-s font-medium text-bone hover:bg-bone hover:text-ink">Other private evidence</Link>
           </div>
-          <p className="mt-3 text-micro text-bone/45">Gmail access is read-only and temporary. Only summaries you select are stored.</p>
+          <p className="mt-3 text-micro text-bone/45">Your raw mailbox stays on this device. Only summaries you select are stored.</p>
         </div>
         <div className="border border-bone/15 bg-bone/5 p-6">
           <p className="text-label uppercase text-gold">Reconstruction readiness</p>

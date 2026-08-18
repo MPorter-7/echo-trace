@@ -8,7 +8,7 @@ const plans = [
     price: '$0',
     cadence: 'forever',
     description: 'Start rebuilding your digital history with the essential recovery tools.',
-    features: ['Create your private account', 'Gmail quick scan', 'Limited findings', 'Basic timeline and manual entries'],
+    features: ['Create your private account', 'Private email-history import', 'Limited findings', 'Basic timeline and manual entries'],
     cta: 'Start free',
     featured: false,
   },

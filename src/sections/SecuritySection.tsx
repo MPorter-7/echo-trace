@@ -110,7 +110,7 @@ export function SecuritySection() {
               Your data. Your control.
             </h2>
             <p className="text-body-m text-ink/80 max-w-[440px] leading-relaxed mb-8">
-              EchoTrace never asks for or stores your passwords. Gmail analysis uses temporary, read-only access that you explicitly approve, and raw mailbox content is not saved. Public-source findings retain their source and retrieval date, confidence estimates are explained, and possible matches require your review. You decide what to keep, discard, export, or delete.
+              EchoTrace never asks for or stores your passwords. Email-history analysis runs locally on an export you choose, and raw mailbox content is not saved. Public-source findings retain their source and retrieval date, confidence estimates are explained, and possible matches require your review. You decide what to keep, discard, export, or delete.
             </p>
             <ArrowLink text="Read our privacy model" href="/privacy" />
           </div>
