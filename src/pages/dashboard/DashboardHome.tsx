@@ -43,7 +43,7 @@ export function DashboardHome() {
   const progress = reconstructionProgress({ identifiers: counts.identifiers, archiveFiles: counts.archiveFiles, matches: counts.matches, emailImports: counts.emailImports, emailFindings: counts.emailFindings }, counts.identifiers > 0)
   const nextSteps = [
     {
-      number: '1', title: 'Find your accounts', description: 'Scan Gmail or upload an email export. EchoTrace looks for account emails and sign-in clues.',
+      number: '1', title: 'Find your accounts', description: 'Import an email export. EchoTrace looks for account emails and sign-in clues.',
       to: '/dashboard/email-history', label: 'Find my accounts', icon: MailSearch, complete: counts.emailImports > 0,
     },
     {
@@ -62,7 +62,7 @@ export function DashboardHome() {
       <section className="border border-ink/10 bg-charcoal p-7 text-bone md:p-10" aria-label="Get started">
         <p className="text-label uppercase text-gold">Start here</p>
         <div className="mt-3 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div className="max-w-2xl"><h2 className="text-3xl font-semibold">Find your old online accounts.</h2><p className="mt-3 text-body-s leading-relaxed text-bone/65">Connect Gmail for a one-time, read-only scan, or upload an email export from any provider. Your raw email is not stored.</p></div>
+          <div className="max-w-2xl"><h2 className="text-3xl font-semibold">Find your old online accounts.</h2><p className="mt-3 text-body-s leading-relaxed text-bone/65">Import an email export from your provider. Your raw email stays on your device and is never stored.</p></div>
           <Link to="/dashboard/email-history" className="inline-flex shrink-0 items-center justify-center rounded-pill bg-gold px-6 py-3 text-body-s font-semibold text-ink hover:bg-bone">Find my accounts <ArrowRight size={16} className="ml-2" /></Link>
         </div>
       </section>
