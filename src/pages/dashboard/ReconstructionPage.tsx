@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { useAuth } from '../../auth/AuthContext'
 import { PageHeader } from '../../components/DashboardUI'
+import { RecoveryOptions } from '../../components/RecoveryOptions'
 import { primaryButtonClass, secondaryButtonClass } from '../../components/FormFields'
 import { findStartingEmail, hasVerifiedAccountEmail, reconstructionProgress, type ReconstructionCounts } from '../../lib/reconstruction'
 import { supabase } from '../../lib/supabase'
@@ -106,24 +107,24 @@ export function ReconstructionPage() {
       <PageHeader
         eyebrow="Evidence-first recovery"
         title="Start reconstruction"
-        description="You are not expected to remember every website. EchoTrace begins with verified clues and evidence you already own; manual memories are optional."
+        description="You are not expected to remember every website or have access to an email archive. Begin with any clue or evidence that belongs to you."
         action={<Link to="/dashboard/identifiers" className={secondaryButtonClass}>Manage identifiers</Link>}
       />
 
       <section className="grid gap-6 border border-ink/10 bg-charcoal p-7 text-bone lg:grid-cols-[1.4fr_0.6fr] lg:p-10">
         <div>
           <p className="text-label uppercase text-gold">Your first clue</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight">We’ll start with the email you verified.</h2>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight">Your verified email is one clue—not a requirement.</h2>
           <div className="mt-7 max-w-xl border border-bone/15 bg-bone/5 p-5">
             <div className="flex items-center gap-3 text-body-s text-bone/55"><MailCheck size={18} className="text-gold" />Verified account email</div>
             <p className="mt-3 break-all text-xl font-medium">{loading ? 'Loading your secure clue…' : startingEmail ?? 'No verified email found'}</p>
           </div>
-          <p className="mt-5 max-w-2xl text-body-s leading-relaxed text-bone/60">Your address is the starting clue. Import an email export and EchoTrace will check locally for signup messages, receipts, password resets, and account notices you may not remember.</p>
+          <p className="mt-5 max-w-2xl text-body-s leading-relaxed text-bone/60">Use this address if it helps, or begin with an old username, a private file, a traceable public source, or a memory. You can combine recovery paths later.</p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Link to="/dashboard/email-history" className={primaryButtonClass}>Find my accounts <ArrowRight size={16} className="ml-2" /></Link>
-            <Link to="/dashboard/archive" className="inline-flex items-center justify-center rounded-pill border border-bone/30 px-5 py-3 text-body-s font-medium text-bone hover:bg-bone hover:text-ink">Other private evidence</Link>
+            <a href="#recovery-options-title" className={primaryButtonClass}>Choose a recovery path <ArrowRight size={16} className="ml-2" /></a>
+            <Link to="/dashboard/timeline" className="inline-flex items-center justify-center rounded-pill border border-bone/30 px-5 py-3 text-body-s font-medium text-bone hover:bg-bone hover:text-ink">Start without email</Link>
           </div>
-          <p className="mt-3 text-micro text-bone/45">Your raw mailbox stays on this device. Only summaries you select are stored.</p>
+          <p className="mt-3 text-micro text-bone/45">You control which clues, findings, files, and memories are saved.</p>
         </div>
         <div className="border border-bone/15 bg-bone/5 p-6">
           <p className="text-label uppercase text-gold">Reconstruction readiness</p>
@@ -132,6 +133,8 @@ export function ReconstructionPage() {
           <p className="mt-5 text-body-s leading-relaxed text-bone/55">This measures the evidence workflow—not how much of your entire digital life has been recovered.</p>
         </div>
       </section>
+
+      <RecoveryOptions className="mt-8" />
 
       <section className="mt-8">
         <div className="mb-5 flex items-end justify-between gap-4">

@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { useBilling } from '../../billing/BillingContext'
 import { PlanButton } from '../../billing/PlanButton'
 import { PageHeader } from '../../components/DashboardUI'
+import { RecoveryOptions } from '../../components/RecoveryOptions'
 import { reconstructionProgress } from '../../lib/reconstruction'
 import { supabase } from '../../lib/supabase'
 import type { TimelineEvent } from '../../types/echo'
@@ -58,14 +59,8 @@ export function DashboardHome() {
 
   return (
     <>
-      <PageHeader eyebrow="Your private workspace" title="Start with one simple step" description="Find the accounts you have used before. We will guide you from there." />
-      <section className="border border-ink/10 bg-charcoal p-7 text-bone md:p-10" aria-label="Get started">
-        <p className="text-label uppercase text-gold">Start here</p>
-        <div className="mt-3 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div className="max-w-2xl"><h2 className="text-3xl font-semibold">Find your old online accounts.</h2><p className="mt-3 text-body-s leading-relaxed text-bone/65">Import an email export from your provider. Your raw email stays on your device and is never stored.</p></div>
-          <Link to="/dashboard/email-history" className="inline-flex shrink-0 items-center justify-center rounded-pill bg-gold px-6 py-3 text-body-s font-semibold text-ink hover:bg-bone">Find my accounts <ArrowRight size={16} className="ml-2" /></Link>
-        </div>
-      </section>
+      <PageHeader eyebrow="Your private workspace" title="Recover your history your way" description="Email is one option, not a requirement. Begin with an export, an old username, a file, a public source, or a memory." />
+      <RecoveryOptions />
       <section className="mt-8" aria-label="Your next steps">
         <p className="text-label uppercase text-gold">How it works</p><h2 className="mt-2 text-2xl font-semibold">Three easy steps</h2>
         <div className="mt-5 grid gap-4 lg:grid-cols-3">
