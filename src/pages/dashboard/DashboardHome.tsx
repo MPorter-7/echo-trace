@@ -1,4 +1,3 @@
-import { ArrowRight, CheckCircle2, FileSearch, History, MailSearch } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
@@ -42,37 +41,16 @@ export function DashboardHome() {
   }, [user])
 
   const progress = reconstructionProgress({ identifiers: counts.identifiers, archiveFiles: counts.archiveFiles, matches: counts.matches, emailImports: counts.emailImports, emailFindings: counts.emailFindings }, counts.identifiers > 0)
-  const nextSteps = [
-    {
-      number: '1', title: 'Find your accounts', description: 'Import an email export. EchoTrace looks for account emails and sign-in clues.',
-      to: '/dashboard/email-history', label: 'Find my accounts', icon: MailSearch, complete: counts.emailImports > 0,
-    },
-    {
-      number: '2', title: 'Review what was found', description: 'You decide which account findings to keep. Nothing is added automatically.',
-      to: '/dashboard/email-history', label: 'Review findings', icon: FileSearch, complete: counts.emailFindings > 0,
-    },
-    {
-      number: '3', title: 'Build your timeline', description: 'Save the parts of your history that matter to you in one private place.',
-      to: '/dashboard/timeline', label: 'Open my timeline', icon: History, complete: counts.events > 0,
-    },
-  ]
-
   return (
     <>
       <PageHeader eyebrow="Your private workspace" title="Recover your history your way" description="Email is one option, not a requirement. Begin with an export, an old username, a file, a public source, or a memory." />
       <RecoveryOptions />
-      <section className="mt-8" aria-label="Your next steps">
-        <p className="text-label uppercase text-gold">How it works</p><h2 className="mt-2 text-2xl font-semibold">Three easy steps</h2>
-        <div className="mt-5 grid gap-4 lg:grid-cols-3">
-          {nextSteps.map(({ number, title, description, to, label, icon: Icon, complete }) => <article key={title} className="border border-ink/10 bg-white p-6"><div className="flex items-center justify-between"><span className="grid h-9 w-9 place-items-center rounded-full bg-mist text-body-s font-semibold">{number}</span>{complete && <span className="inline-flex items-center gap-1 text-micro font-medium text-emerald-700"><CheckCircle2 size={14} />Done</span>}</div><Icon size={22} className="mt-8 text-gold" /><h3 className="mt-4 text-xl font-semibold">{title}</h3><p className="mt-2 text-body-s leading-relaxed text-ink/55">{description}</p><Link to={to} className="mt-5 inline-flex items-center gap-2 text-body-s font-medium underline decoration-gold underline-offset-4">{label}<ArrowRight size={15} /></Link></article>)}
-        </div>
-      </section>
       {plan !== 'vault' && !billingLoading && <section className="mt-8 border border-gold/40 bg-[#fffaf0] p-7" aria-label="Upgrade your EchoTrace plan">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div className="max-w-2xl">
             <p className="text-label uppercase text-gold">Unlock more of your history</p>
             <h2 className="mt-2 text-3xl font-semibold">{plan === 'recovery' ? 'Keep your recovery protected in Vault.' : 'Ready for a complete recovery?'}</h2>
-            <p className="mt-3 text-body-s text-ink/65">{plan === 'recovery' ? 'Vault includes your Recovery access plus ongoing scans and expanded private storage for $7.99 per month.' : 'Choose Recovery for full access once, or Vault for full access with ongoing protection.'}</p>
+            <p className="mt-3 text-body-s text-ink/65">{plan === 'recovery' ? 'Vault includes your Recovery access plus expanded private storage for $7.99 per month.' : 'Choose Recovery for full access once, or Vault for full access with expanded private storage.'}</p>
           </div>
           <div className="flex flex-wrap gap-3">
             {plan === 'free' && <PlanButton plan="recovery" className="rounded-pill border border-ink bg-white px-5 py-3 text-body-s font-medium text-ink hover:bg-ink hover:text-bone">Unlock Recovery — $19.99</PlanButton>}
