@@ -43,7 +43,7 @@ export function DashboardHome() {
   const progress = reconstructionProgress({ identifiers: counts.identifiers, archiveFiles: counts.archiveFiles, matches: counts.matches, emailImports: counts.emailImports, emailFindings: counts.emailFindings }, counts.identifiers > 0)
   return (
     <>
-      <PageHeader eyebrow="Your private workspace" title="Recover your history your way" description="Email is one option, not a requirement. Begin with an export, an old username, a file, a public source, or a memory." />
+      <PageHeader eyebrow="Your private workspace" title="Recover your history your way" description="Email is one option, not a requirement. Begin with what you remember: an old account, username, file, public source, or memory." />
       <RecoveryOptions />
       {plan !== 'vault' && !billingLoading && <section className="mt-8 border border-gold/40 bg-[#fffaf0] p-7" aria-label="Upgrade your EchoTrace plan">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
@@ -67,7 +67,7 @@ export function DashboardHome() {
         </section>
         <section className="border border-ink/10 bg-white p-7">
           <div className="flex items-center justify-between"><div><p className="text-label uppercase text-gold">Recently added</p><h2 className="mt-2 text-2xl font-semibold">Your latest history</h2></div><Link to="/dashboard/timeline" className="text-body-s underline decoration-gold underline-offset-4">View all</Link></div>
-          {recent.length ? <ul className="mt-6 divide-y divide-ink/10">{recent.map((event) => <li key={event.id} className="py-4"><p className="font-medium">{event.title}</p><p className="mt-1 text-body-s text-ink/50">{event.platform || 'Personal memory'} · {event.event_date || event.approximate_year || 'Date unknown'}</p></li>)}</ul> : <div className="mt-7 border border-dashed border-ink/15 p-8 text-center"><p className="text-body-s text-ink/55">Nothing has been saved yet. Start by finding your accounts.</p><Link to="/dashboard/email-history" className="mt-4 inline-block text-body-s font-medium underline decoration-gold underline-offset-4">Find my accounts</Link></div>}
+          {recent.length ? <ul className="mt-6 divide-y divide-ink/10">{recent.map((event) => <li key={event.id} className="py-4"><p className="font-medium">{event.title}</p><p className="mt-1 text-body-s text-ink/50">{event.platform || 'Personal memory'} · {event.event_date || event.approximate_year || 'Date unknown'}</p></li>)}</ul> : <div className="mt-7 border border-dashed border-ink/15 p-8 text-center"><p className="text-body-s text-ink/55">Nothing has been saved yet. Start by telling EchoTrace what you remember.</p><Link to="/dashboard/discover" className="mt-4 inline-block text-body-s font-medium underline decoration-gold underline-offset-4">Find my old accounts</Link></div>}
         </section>
       </div>
     </>
