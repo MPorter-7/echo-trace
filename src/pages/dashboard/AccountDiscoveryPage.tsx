@@ -43,6 +43,7 @@ export function AccountDiscoveryPage() {
     if (fromYear && toYear && toYear < fromYear) return toast.error('The ending year cannot be earlier than the starting year.')
     setSaving(true)
     let saved = 0
+    let alreadySaved = 0
     let failed = false
     const clueNotes = [platform ? `Platform category: ${platform}.` : '', fromYear || toYear ? `Approximate years: ${fromYear || '?'}–${toYear || '?'}.` : ''].filter(Boolean).join(' ') || null
     for (const identifier of identifiers) {
@@ -51,7 +52,8 @@ export function AccountDiscoveryPage() {
         notes: clueNotes, verification_status: identifier.type === 'email' ? 'unverified_historical' : 'user_supplied',
         verification_method: 'Supplied by user through Account Discovery; not independently verified',
       })
-      if (!error || error.code === '23505') saved += 1
+      if (!error) saved += 1
+      else if (error.code === '23505') alreadySaved += 1
       else failed = true
     }
 
@@ -74,12 +76,15 @@ export function AccountDiscoveryPage() {
         search_query: query.query, status: 'possible', confidence_score: score, confidence_reason: reason,
         source_url: null, notes: clueNotes,
       })
-      if (error) failed = true
-      else saved += 1
+      if (!error) saved += 1
+      else if (error.code === '23505') alreadySaved += 1
+      else failed = true
     }
     setSaving(false)
     setStarted(true)
     if (failed) toast.error('Some discovery data could not be saved. The search links are still available below.')
+    else if (saved > 0 && alreadySaved > 0) toast.success(`${saved} new discovery item${saved === 1 ? '' : 's'} saved. ${alreadySaved} item${alreadySaved === 1 ? '' : 's'} were already saved.`)
+    else if (alreadySaved > 0) toast.success('Your discovery leads are already saved. Nothing new was added.')
     else toast.success(`${saved} discovery item${saved === 1 ? '' : 's'} saved privately.`)
   }
 
