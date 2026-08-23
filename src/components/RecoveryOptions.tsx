@@ -1,13 +1,13 @@
-import { Archive, ArrowRight, Fingerprint, History, MailSearch, SearchCheck } from 'lucide-react'
+import { Archive, ArrowRight, Fingerprint, History, MailSearch, SearchCheck, Sparkles } from 'lucide-react'
 import { Link } from 'react-router'
 
 const recoveryOptions = [
   {
-    title: 'Import an email export',
-    description: 'Use an .mbox export from Gmail, Yahoo, Proton Mail, Apple Mail, Thunderbird, or another compatible provider.',
-    to: '/dashboard/email-history',
-    label: 'Import email history',
-    icon: MailSearch,
+    title: 'Find my old accounts',
+    description: 'Start with an email, username, display name, platform, or date you remember. No email export required.',
+    to: '/dashboard/discover',
+    label: 'Start account discovery',
+    icon: Sparkles,
   },
   {
     title: 'Enter old accounts and usernames',
@@ -31,6 +31,13 @@ const recoveryOptions = [
     icon: SearchCheck,
   },
   {
+    title: 'Import an email archive',
+    description: 'Already have an email export? Import an .mbox archive from Gmail, Yahoo, Proton Mail, Apple Mail, Thunderbird, or another compatible provider.',
+    to: '/dashboard/email-history',
+    label: 'Import email history',
+    icon: MailSearch,
+  },
+  {
     title: 'Start without email',
     description: 'Begin with a remembered platform, username, event, or approximate year. You can add evidence later.',
     to: '/dashboard/timeline',
@@ -48,7 +55,7 @@ export function RecoveryOptions({ className = '' }: RecoveryOptionsProps) {
     <section className={className} aria-labelledby="recovery-options-title">
       <p className="text-label uppercase text-gold">Choose your starting point</p>
       <h2 id="recovery-options-title" className="mt-2 text-2xl font-semibold">How would you like to begin?</h2>
-      <p className="mt-2 max-w-3xl text-body-s leading-relaxed text-ink/55">Email is optional. Start with whichever evidence you already have, and use the other recovery paths whenever you are ready.</p>
+      <p className="mt-2 max-w-3xl text-body-s leading-relaxed text-ink/55">You do not need an email export. Start with whichever clues you already have, and use the other recovery paths whenever you are ready.</p>
       <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {recoveryOptions.map(({ title, description, to, label, icon: Icon }) => (
           <article key={title} className="flex min-h-64 flex-col border border-ink/10 bg-white p-6">
