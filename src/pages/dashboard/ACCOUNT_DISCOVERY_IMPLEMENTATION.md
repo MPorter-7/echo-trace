@@ -1,1 +1,0 @@
-Account discovery uses user-supplied identifiers, a private RLS-protected account_discovery_leads table, and guided public searches. Leads are explicitly labeled as possible/likely/not mine and are never treated as proof of ownership.
