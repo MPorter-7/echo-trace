@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router'
 
-interface NavigationProps {
-  onRequestAccess?: () => void
-}
-
-export function Navigation({ onRequestAccess }: NavigationProps) {
+export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -32,7 +28,6 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
         style={{ borderBottom: `1px solid ${isScrolled ? 'rgba(26, 26, 26, 0.1)' : 'rgba(255, 255, 255, 0.14)'}` }}
       >
         <div className="w-full max-w-content mx-auto px-5 md:px-10 lg:px-20 flex items-center justify-between">
-          {/* Logo */}
           <Link to="/" className="block h-12 w-44 overflow-hidden rounded-sm" aria-label="EchoTrace home">
             <img
               src="/images/brand/echotrace-logo.png"
@@ -41,7 +36,6 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
             />
           </Link>
 
-          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-10">
             <a
               href="#main"
@@ -66,22 +60,12 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
             </a>
           </div>
 
-          {/* Desktop CTA */}
           <div className="hidden items-center gap-3 md:flex">
-            <Link to="/login" className="px-3 py-2 text-body-s font-medium text-current hover:text-cyan-300">Sign in</Link>
-            <button
-              onClick={onRequestAccess}
-              className={`rounded-pill border px-6 py-2.5 text-body-s font-medium transition-all duration-300 ${
-                isScrolled
-                  ? 'border-ink bg-bone text-ink hover:bg-ink hover:text-bone'
-                  : 'border-white/50 bg-white/10 text-white hover:border-cyan-300 hover:bg-cyan-300 hover:text-[#02101f]'
-              }`}
-            >
-              Request Access
-            </button>
+            <Link to="/login" className="px-3 py-2 text-body-s font-medium text-current hover:text-cyan-300">
+              Sign in
+            </Link>
           </div>
 
-          {/* Mobile Hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 text-current md:hidden"
@@ -96,7 +80,6 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[200] bg-bone flex flex-col justify-center items-start px-10 md:hidden">
           <button
