@@ -42,16 +42,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     let mounted = true
+
+    // Resolve the initial session from storage before allowing protected
+    // routes to redirect. INITIAL_SESSION is emitted asynchronously by
+    // Supabase and must not race the initial getSession() result.
     void supabase.auth.getSession().then(({ data }) => {
-      if (mounted) {
-        setSession(data.session)
-        setLoading(false)
-      }
+      if (!mounted) return
+      setSession(data.session)
+      setLoading(false)
     })
 
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession)
-      setLoading(false)
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!mounted) return
+      // Only a real SIGNED_OUT event should clear an established session.
+      // Other auth events can legitimately provide a null session during
+      // initialization and should not make protected navigation log out.
+      if (event === 'SIGNED_OUT') setSession(null)
+      else if (nextSession) setSession(nextSession)
     })
 
     return () => {
