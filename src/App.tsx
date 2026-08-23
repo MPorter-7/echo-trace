@@ -13,6 +13,7 @@ const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage').th
 const AuthCallbackPage = lazy(() => import('./pages/auth/AuthCallbackPage').then((module) => ({ default: module.AuthCallbackPage })))
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout').then((module) => ({ default: module.DashboardLayout })))
 const DashboardHome = lazy(() => import('./pages/dashboard/DashboardHome').then((module) => ({ default: module.DashboardHome })))
+const AccountDiscoveryPage = lazy(() => import('./pages/dashboard/AccountDiscoveryPage').then((module) => ({ default: module.AccountDiscoveryPage })))
 const ReconstructionPage = lazy(() => import('./pages/dashboard/ReconstructionPage').then((module) => ({ default: module.ReconstructionPage })))
 const EmailHistoryPage = lazy(() => import('./pages/dashboard/EmailHistoryPage').then((module) => ({ default: module.EmailHistoryPage })))
 const IdentifiersPage = lazy(() => import('./pages/dashboard/IdentifiersPage').then((module) => ({ default: module.IdentifiersPage })))
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="/billing/complete" element={<BillingCompletePage />} />
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
+              <Route path="discover" element={<AccountDiscoveryPage />} />
               <Route path="reconstruct" element={<ReconstructionPage />} />
               <Route path="email-history" element={<EmailHistoryPage />} />
               <Route path="identifiers" element={<IdentifiersPage />} />
