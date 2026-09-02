@@ -5,7 +5,7 @@ const source = readFileSync(new URL('./RecoveryOptions.tsx', import.meta.url), '
 
 describe('dashboard recovery options', () => {
   it('offers provider-neutral and no-email starting paths', () => {
-    expect(source).toContain('Import an email export')
+    expect(source).toContain('Import an email archive')
     expect(source).toContain('Enter old accounts and usernames')
     expect(source).toContain('Upload private evidence')
     expect(source).toContain('Use guided public search')
