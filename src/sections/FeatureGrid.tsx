@@ -3,7 +3,7 @@ import {
   Waypoints,
   FileSearch,
   SearchCheck,
-  MailSearch,
+  Compass,
   Upload,
   Fingerprint,
   DownloadCloud,
@@ -33,14 +33,14 @@ const FEATURES = [
     body: 'You accept, reject, or mark each match uncertain. Confidence scores are explained estimates — never proof.',
   },
   {
-    icon: MailSearch,
-    title: 'Gmail quick-scan (optional)',
-    body: 'A temporary, read-only scan that runs in your browser. Only the aggregate findings you select are saved.',
+    icon: Compass,
+    title: 'Guided recovery workflows',
+    body: 'Step-by-step prompts walk you through rebuilding your history from evidence you already have. You can also run guided public searches as outbound links.',
   },
   {
     icon: Upload,
     title: 'Google Takeout & mailbox import',
-    body: 'Bring in .mbox exports from common providers. Files are parsed locally, not uploaded wholesale.',
+    body: 'Bring in .mbox and Takeout exports from common providers. Files are analyzed locally in your browser, not uploaded wholesale.',
   },
   {
     icon: Fingerprint,

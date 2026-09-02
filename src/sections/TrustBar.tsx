@@ -1,7 +1,7 @@
 import { Laptop, ListChecks, DownloadCloud, ShieldOff } from 'lucide-react'
 
 const ITEMS = [
-  { icon: Laptop, label: 'Email scans run in your browser' },
+  { icon: Laptop, label: 'Imports analyzed in your browser' },
   { icon: ListChecks, label: 'You approve every record' },
   { icon: DownloadCloud, label: 'Export or delete anytime' },
   { icon: ShieldOff, label: 'No people-search, no tracking' },

@@ -44,6 +44,18 @@ export function Navigation({ onRequestAccess }: NavigationProps) {
     }
   }, [menuOpen])
 
+  // The mobile menu overlay is `md:hidden`, so if the viewport grows to the
+  // desktop breakpoint while the menu is open it disappears visually but leaves
+  // the body scroll-locked. Close it on that transition so the lock is released.
+  useEffect(() => {
+    const desktopQuery = window.matchMedia('(min-width: 768px)')
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setMenuOpen(false)
+    }
+    desktopQuery.addEventListener('change', handleChange)
+    return () => desktopQuery.removeEventListener('change', handleChange)
+  }, [])
+
   const handleHashClick = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     event.preventDefault()
     setMenuOpen(false)

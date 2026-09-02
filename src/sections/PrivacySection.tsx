@@ -17,7 +17,7 @@ const PRINCIPLES = [
   {
     icon: Laptop,
     title: 'Local processing where it matters',
-    body: 'Gmail quick-scan and mailbox imports are parsed in your browser. Raw mailbox content and access tokens are not sent to EchoTrace servers.',
+    body: 'Mailbox and Google Takeout imports are analyzed in your browser. Raw mailbox content is not sent to EchoTrace servers.',
   },
   {
     icon: Trash2,

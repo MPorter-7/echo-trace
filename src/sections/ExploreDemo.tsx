@@ -59,11 +59,13 @@ const SAMPLE_FINDINGS = [
   },
 ]
 
+// This is a marketing-only preview — nothing here is saved. Labels say so
+// explicitly so a visitor never thinks the sample changed their real history.
 const STATUS_LABEL: Record<MatchStatus, string> = {
   pending: 'Awaiting your review',
-  accepted: 'Added to your history',
-  rejected: 'Not me',
-  uncertain: 'Flagged uncertain',
+  accepted: 'Marked confirmed in this sample',
+  rejected: 'Marked “not me” in this sample',
+  uncertain: 'Flagged uncertain in this sample',
 }
 
 export function ExploreDemo() {
@@ -190,7 +192,7 @@ export function ExploreDemo() {
               {tab === 'findings' && (
                 <div role="tabpanel" id="panel-findings" aria-labelledby="tab-findings" className="space-y-3">
                   <p className="text-body-s text-slate-400">
-                    A Gmail quick-scan or mailbox import only ever saves aggregate summaries like these — never
+                    A mailbox or Google Takeout import only ever saves aggregate summaries like these — never
                     raw messages, addresses, or attachments.
                   </p>
                   {SAMPLE_FINDINGS.map((finding) => (

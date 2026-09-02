@@ -30,7 +30,7 @@ const FAQS = [
   },
   {
     q: 'How is my email history handled?',
-    a: 'The optional Gmail quick-scan uses temporary, read-only access and runs in your browser. Mailbox and Google Takeout imports are also parsed locally. Only the aggregate findings you choose to keep are saved — never raw messages or credentials.',
+    a: 'You import a mailbox or Google Takeout export, and it is analyzed locally in your browser. Only the aggregate findings you choose to keep are saved — never raw messages, addresses, or credentials.',
   },
   {
     q: 'How do I get started?',
