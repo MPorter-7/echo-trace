@@ -18,7 +18,8 @@ export function AuthCallbackPage() {
         const { error: exchangeError } = await client.auth.exchangeCodeForSession(code)
         if (exchangeError) return setError('This verification link is invalid or expired.')
       }
-      navigate('/dashboard', { replace: true })
+      const pendingPlan = window.localStorage.getItem('echotrace_pending_plan')
+      navigate(pendingPlan === 'recovery' || pendingPlan === 'vault' ? `/billing/complete?plan=${pendingPlan}` : '/dashboard', { replace: true })
     }
     void run()
   }, [navigate])

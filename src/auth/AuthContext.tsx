@@ -42,15 +42,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     let mounted = true
-    void supabase.auth.getSession().then(({ data }) => {
-      if (mounted) {
-        setSession(data.session)
-        setLoading(false)
+
+    // Subscribe before reading the persisted session. This prevents a
+    // navigation/full-page reload from missing the INITIAL_SESSION event
+    // and briefly treating an existing session as logged out.
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!mounted) return
+      if (event === 'SIGNED_OUT') {
+        setSession(null)
+        return
       }
+      if (nextSession) setSession(nextSession)
     })
 
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession)
+    void supabase.auth.getSession().then(({ data: sessionData }) => {
+      if (!mounted) return
+      setSession(sessionData.session)
+      setLoading(false)
+    }).catch(() => {
+      if (!mounted) return
+      // Keep the auth UI in a safe loading state until Supabase resolves.
       setLoading(false)
     })
 

@@ -7,6 +7,7 @@ import { TrustBar } from '../sections/TrustBar'
 import { HowItWorks } from '../sections/HowItWorks'
 import { FeatureGrid } from '../sections/FeatureGrid'
 import { ExploreDemo } from '../sections/ExploreDemo'
+import { PricingSection } from '../sections/PricingSection'
 import { PrivacySection } from '../sections/PrivacySection'
 import { FaqSection } from '../sections/FaqSection'
 import { FinalCta } from '../sections/FinalCta'
@@ -26,6 +27,7 @@ export function Home() {
         <HowItWorks />
         <FeatureGrid />
         <ExploreDemo />
+        <PricingSection />
         <PrivacySection />
         <FaqSection />
         <FinalCta onRequestAccess={openWaitlist} />

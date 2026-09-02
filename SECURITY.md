@@ -33,13 +33,13 @@ Delete-all first verifies the caller's archive metadata can be listed and every 
 
 ## Email-history recovery
 
-Quick Gmail Scan uses Google Identity Services' browser token flow and requests only `gmail.readonly`. The short-lived access token remains in memory, requests go directly from the browser to the Gmail API, and EchoTrace revokes the grant after each scan. The search explicitly excludes Spam, Trash, Sent, and Drafts and targets high-signal signup, verification, password, and account-notice messages. The scan requests message headers and Google's short snippet—not full bodies or attachments. No refresh token, Google client secret, Gmail access token, address, subject, or snippet is sent to or stored in Supabase.
+Email-history recovery uses a mailbox export selected by the user. The raw `.mbox` file is streamed and analyzed locally in the browser; EchoTrace does not connect to an email-provider account or request an email-provider OAuth scope. The analyzer targets high-signal signup, verification, password, and account-notice messages and removes weak or spam-like results before review.
 
-Google Takeout `.mbox` files remain an advanced fallback. They are streamed and parsed in the authenticated user's browser. The raw file, message bodies, sender addresses, and subject lines are never uploaded to Supabase or another provider. Subject examples from either method appear only in temporary local review state and disappear when the page is cleared or refreshed.
+`.mbox` files from Gmail via Google Takeout, Yahoo, Proton Mail, Apple Mail, Thunderbird, and compatible providers are streamed and parsed in the authenticated user's browser. The raw file, message bodies, sender addresses, and subject lines are never uploaded to Supabase or another provider. Subject examples appear only in temporary local review state and disappear when the page is cleared or refreshed.
 
 After local analysis, no finding is stored by default. The user must select findings explicitly. Stored records contain only import metadata plus aggregate service name, sender domain, evidence categories and counts, first/last dates, an explainable confidence estimate, and review status. `email_imports` and `email_findings` use owner-only RLS, and cross-table policies verify that linked imports and timeline events belong to the same authenticated user. Delete-all and data export include these tables.
 
-The parser caps retained header and body samples and streams files instead of loading them all into memory. Quick Gmail Scan limits each pass to 5,000 likely account messages. Cleanup runs locally: sender subdomains are combined, consumer-mailbox and delivery-infrastructure senders are suppressed, obvious scam language is removed, and weak one-message receipt matches are not shown. Both methods recognize evidence patterns; they do not assert account ownership. Forwarded messages and shared inboxes can create false positives, so user approval is still required before any summary is saved or becomes a timeline event.
+The parser caps retained header and body samples and streams files instead of loading them all into memory. Cleanup runs locally: sender subdomains are combined, consumer-mailbox and delivery-infrastructure senders are suppressed, obvious scam language is removed, and weak one-message receipt matches are not shown. The analyzer recognizes evidence patterns; it does not assert account ownership. Forwarded messages and shared inboxes can create false positives, so user approval is still required before any summary is saved or becomes a timeline event.
 
 ## Account deletion
 
@@ -52,7 +52,6 @@ Match confidence is deterministic and explainable. Mutually exclusive supporting
 ## Known launch requirements
 
 - Complete the two-user RLS tests after applying the migration.
-- Complete Google OAuth verification before making Quick Gmail Scan broadly available beyond named test users.
 - Review Supabase Auth rate limits, email delivery, logs, and backup settings.
 - Obtain legal review of Privacy and Terms pages before commercial launch.
 - Add malware scanning before raising upload limits or accepting additional file types.

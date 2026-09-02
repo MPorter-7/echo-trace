@@ -1,8 +1,10 @@
-import { ArrowRight, Fingerprint, History, MailSearch, SearchCheck, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
+import { useBilling } from '../../billing/BillingContext'
+import { PlanButton } from '../../billing/PlanButton'
 import { PageHeader } from '../../components/DashboardUI'
+import { RecoveryOptions } from '../../components/RecoveryOptions'
 import { reconstructionProgress } from '../../lib/reconstruction'
 import { supabase } from '../../lib/supabase'
 import type { TimelineEvent } from '../../types/echo'
@@ -11,6 +13,7 @@ interface Counts { identifiers: number; events: number; pending: number; matches
 
 export function DashboardHome() {
   const { user } = useAuth()
+  const { plan, loading: billingLoading } = useBilling()
   const [counts, setCounts] = useState<Counts>({ identifiers: 0, events: 0, pending: 0, matches: 0, accepted: 0, archiveFiles: 0, emailImports: 0, emailFindings: 0 })
   const [recent, setRecent] = useState<TimelineEvent[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,30 +41,33 @@ export function DashboardHome() {
   }, [user])
 
   const progress = reconstructionProgress({ identifiers: counts.identifiers, archiveFiles: counts.archiveFiles, matches: counts.matches, emailImports: counts.emailImports, emailFindings: counts.emailFindings }, counts.identifiers > 0)
-  const cards = [
-    { label: 'Identifiers', value: counts.identifiers, icon: Fingerprint, to: '/dashboard/identifiers' },
-    { label: 'Timeline events', value: counts.events, icon: History, to: '/dashboard/timeline' },
-    { label: 'Email findings', value: counts.emailFindings, icon: MailSearch, to: '/dashboard/email-history' },
-    { label: 'Pending matches', value: counts.pending, icon: SearchCheck, to: '/dashboard/matches' },
-    { label: 'Accepted matches', value: counts.accepted, icon: ShieldCheck, to: '/dashboard/matches' },
-  ]
-
   return (
     <>
-      <PageHeader eyebrow="Private workspace" title="Recovery overview" description="A calm, sourced view of the history you have chosen to reconstruct." action={<Link to="/dashboard/reconstruct" className="rounded-pill bg-ink px-6 py-3 text-body-s font-medium text-bone hover:bg-gold hover:text-ink">Start reconstruction</Link>} />
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Recovery statistics">
-        {cards.map(({ label, value, icon: Icon, to }) => <Link key={label} to={to} className="border border-ink/10 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-center justify-between"><Icon size={20} className="text-gold" /><ArrowRight size={16} className="text-ink/30" /></div><p className="mt-8 text-4xl font-semibold">{loading ? '—' : value}</p><p className="mt-1 text-body-s text-ink/55">{label}</p></Link>)}
-      </section>
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.5fr]">
+      <PageHeader eyebrow="Your private workspace" title="Recover your history your way" description="Email is one option, not a requirement. Begin with what you remember: an old account, username, file, public source, or memory." />
+      <RecoveryOptions />
+      {plan !== 'vault' && !billingLoading && <section className="mt-8 border border-gold/40 bg-[#fffaf0] p-7" aria-label="Upgrade your EchoTrace plan">
+        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div className="max-w-2xl">
+            <p className="text-label uppercase text-gold">Unlock more of your history</p>
+            <h2 className="mt-2 text-3xl font-semibold">{plan === 'recovery' ? 'Keep your recovery protected in Vault.' : 'Ready for a complete recovery?'}</h2>
+            <p className="mt-3 text-body-s text-ink/65">{plan === 'recovery' ? 'Vault includes your Recovery access plus expanded private storage for $7.99 per month.' : 'Choose Recovery for full access once, or Vault for full access with expanded private storage.'}</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {plan === 'free' && <PlanButton plan="recovery" className="rounded-pill border border-ink bg-white px-5 py-3 text-body-s font-medium text-ink hover:bg-ink hover:text-bone">Unlock Recovery — $19.99</PlanButton>}
+            <PlanButton plan="vault" className="rounded-pill bg-ink px-5 py-3 text-body-s font-medium text-bone hover:bg-gold hover:text-ink">Get Vault — $7.99/month</PlanButton>
+          </div>
+        </div>
+      </section>}
+      <div className="mt-8 grid gap-6 lg:grid-cols-[0.8fr_1.5fr]">
         <section className="border border-ink/10 bg-charcoal p-7 text-bone">
           <p className="text-label uppercase text-gold">Recovery progress</p>
           <p className="mt-5 text-5xl font-semibold">{loading ? '—' : `${progress}%`}</p>
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-bone/10"><div className="h-full bg-gold transition-all" style={{ width: `${progress}%` }} /></div>
-          <p className="mt-5 text-body-s text-bone/60">Progress reflects records you add and review—not a claim that the internet contains a complete history.</p>
+          <p className="mt-5 text-body-s text-bone/60">This is based only on the items you add and review. It does not claim to find your entire history.</p>
         </section>
         <section className="border border-ink/10 bg-white p-7">
           <div className="flex items-center justify-between"><div><p className="text-label uppercase text-gold">Recently added</p><h2 className="mt-2 text-2xl font-semibold">Your latest history</h2></div><Link to="/dashboard/timeline" className="text-body-s underline decoration-gold underline-offset-4">View all</Link></div>
-          {recent.length ? <ul className="mt-6 divide-y divide-ink/10">{recent.map((event) => <li key={event.id} className="py-4"><p className="font-medium">{event.title}</p><p className="mt-1 text-body-s text-ink/50">{event.platform || 'Personal memory'} · {event.event_date || event.approximate_year || 'Date unknown'}</p></li>)}</ul> : <div className="mt-7 border border-dashed border-ink/15 p-8 text-center"><p className="text-body-s text-ink/55">No reconstructed history yet. Begin with your verified signup email and evidence you already own.</p><Link to="/dashboard/reconstruct" className="mt-4 inline-block text-body-s font-medium underline decoration-gold underline-offset-4">Start reconstruction</Link><span className="mx-2 text-ink/25">·</span><Link to="/dashboard/timeline" className="text-body-s text-ink/45 underline underline-offset-4">Add a memory (optional)</Link></div>}
+          {recent.length ? <ul className="mt-6 divide-y divide-ink/10">{recent.map((event) => <li key={event.id} className="py-4"><p className="font-medium">{event.title}</p><p className="mt-1 text-body-s text-ink/50">{event.platform || 'Personal memory'} · {event.event_date || event.approximate_year || 'Date unknown'}</p></li>)}</ul> : <div className="mt-7 border border-dashed border-ink/15 p-8 text-center"><p className="text-body-s text-ink/55">Nothing has been saved yet. Start by telling EchoTrace what you remember.</p><Link to="/dashboard/discover" className="mt-4 inline-block text-body-s font-medium underline decoration-gold underline-offset-4">Find my old accounts</Link></div>}
         </section>
       </div>
     </>

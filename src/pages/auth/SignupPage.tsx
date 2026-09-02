@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useAuth } from '../../auth/AuthContext'
 import { AuthShell } from '../../components/AuthShell'
 import { Field, inputClass, primaryButtonClass } from '../../components/FormFields'
@@ -9,6 +9,7 @@ import { validateDisplayName } from '../../lib/validation'
 export function SignupPage() {
   const { signUp, configured } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -22,11 +23,13 @@ export function SignupPage() {
     if (form.password.length < 8) return setError('Use at least 8 characters for your password.')
     if (form.password !== form.confirm) return setError('The passwords do not match.')
     setSaving(true)
+    const requestedPlan = searchParams.get('plan')
+    if (requestedPlan === 'recovery' || requestedPlan === 'vault') window.localStorage.setItem('echotrace_pending_plan', requestedPlan)
     const result = await signUp(form.email.trim().toLowerCase(), form.password, nameValidation.normalized ?? '')
     setSaving(false)
     if (result.error) setError(result.error)
     else if (result.emailConfirmationRequired) setMessage('Check your email and use the verification link to activate your account.')
-    else navigate('/dashboard', { replace: true })
+    else navigate(requestedPlan === 'recovery' || requestedPlan === 'vault' ? `/billing/complete?plan=${requestedPlan}` : '/dashboard', { replace: true })
   }
 
   return (

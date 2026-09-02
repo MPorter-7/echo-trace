@@ -1,18 +1,21 @@
 import { useState } from 'react'
-import { Archive, Fingerprint, LayoutDashboard, LogOut, MailSearch, Menu, ScanSearch, SearchCheck, Settings, Waypoints, X } from 'lucide-react'
+import { Archive, CreditCard, Fingerprint, LayoutDashboard, LogOut, MailSearch, Menu, ScanSearch, SearchCheck, Settings, Sparkles, Target, Waypoints, X } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useAuth } from '../auth/AuthContext'
 import { ConsentGate } from '../components/ConsentGate'
 
 const links = [
-  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
-  { to: '/dashboard/reconstruct', label: 'Start Reconstruction', icon: ScanSearch },
-  { to: '/dashboard/email-history', label: 'Find My Accounts', icon: MailSearch },
-  { to: '/dashboard/identifiers', label: 'My Identifiers', icon: Fingerprint },
-  { to: '/dashboard/timeline', label: 'Timeline', icon: Waypoints },
-  { to: '/dashboard/matches', label: 'Possible Matches', icon: SearchCheck },
-  { to: '/dashboard/archive', label: 'Personal Archive', icon: Archive },
+  { to: '/dashboard', label: 'Home', icon: LayoutDashboard, end: true },
+  { to: '/dashboard/reconstruct', label: 'Get started', icon: ScanSearch },
+  { to: '/dashboard/discover', label: 'Find my old accounts', icon: Sparkles },
+  { to: '/dashboard/leads', label: 'Account leads', icon: Target },
+  { to: '/dashboard/identifiers', label: 'My identity clues', icon: Fingerprint },
+  { to: '/dashboard/matches', label: 'Guided public search', icon: SearchCheck },
+  { to: '/dashboard/email-history', label: 'Import email archive', icon: MailSearch },
+  { to: '/dashboard/timeline', label: 'My timeline', icon: Waypoints },
+  { to: '/dashboard/archive', label: 'My files', icon: Archive },
+  { to: '/dashboard/settings#billing', label: 'Plans & billing', icon: CreditCard },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
 
