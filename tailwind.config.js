@@ -13,6 +13,12 @@ module.exports = {
         mist: "#F0EDE8",
         warm: "#FFFDF9",
         "faded-gold": "#D4C9A8",
+        // Dark landing-page surface system
+        midnight: "#020817",
+        night: "#0B1220",
+        "night-raised": "#0F1B31",
+        "night-border": "#1E2D45",
+        haze: "#94A3B8",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

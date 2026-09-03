@@ -69,17 +69,17 @@ export function AccessModal({ open, onClose }: AccessModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-ink/45 px-5 backdrop-blur-sm"
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-midnight/70 px-5 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="access-title"
       onMouseDown={(event) => event.target === event.currentTarget && close()}
     >
-      <div className="relative w-full max-w-lg border border-ink/15 bg-bone p-8 shadow-2xl md:p-12">
+      <div className="relative w-full max-w-lg rounded-2xl border border-night-border bg-night-raised p-8 text-slate-100 shadow-2xl md:p-12">
         <button
           type="button"
           onClick={close}
-          className="absolute right-5 top-5 text-2xl leading-none text-ink/60 hover:text-ink"
+          className="absolute right-5 top-5 text-2xl leading-none text-slate-400 hover:text-white"
           aria-label="Close"
         >
           ×
@@ -87,26 +87,26 @@ export function AccessModal({ open, onClose }: AccessModalProps) {
 
         {submitted ? (
           <div className="py-6 text-center">
-            <p className="mb-3 text-label uppercase text-gold">You’re on the list</p>
-            <h2 id="access-title" className="mb-4 text-4xl font-semibold text-ink">Welcome to EchoTrace.</h2>
-            <p className="mb-8 text-body-m text-ink/65">
+            <p className="mb-3 text-label uppercase text-cyan-300">You’re on the list</p>
+            <h2 id="access-title" className="mb-4 text-4xl font-semibold text-white">Welcome to EchoTrace.</h2>
+            <p className="mb-8 text-body-m text-slate-400">
               {savedPermanently
                 ? 'Your request is permanently registered for early access.'
                 : 'Your request is saved on this device. Permanent registration will activate when the site is connected to Supabase.'}
             </p>
-            <button onClick={close} className="rounded-pill bg-ink px-7 py-3 text-body-s font-medium text-bone">
+            <button onClick={close} className="rounded-pill bg-cyan-300 px-7 py-3 text-body-s font-semibold text-midnight hover:bg-cyan-200">
               Done
             </button>
           </div>
         ) : (
           <>
-            <p className="mb-3 text-label uppercase text-gold">Early access</p>
-            <h2 id="access-title" className="mb-4 text-4xl font-semibold text-ink">Reclaim your digital history.</h2>
-            <p className="mb-8 text-body-m text-ink/65">
-              Join the EchoTrace waitlist for product updates and private beta access.
+            <p className="mb-3 text-label uppercase text-cyan-300">Email waitlist</p>
+            <h2 id="access-title" className="mb-4 text-4xl font-semibold text-white">Get EchoTrace updates.</h2>
+            <p className="mb-8 text-body-m text-slate-400">
+              Join the waitlist for product updates and early access. You can also create your workspace right now.
             </p>
             <form onSubmit={submit} noValidate>
-              <label htmlFor="access-email" className="mb-2 block text-body-s font-medium text-ink">Email address</label>
+              <label htmlFor="access-email" className="mb-2 block text-body-s font-medium text-slate-200">Email address</label>
               <input
                 id="access-email"
                 type="email"
@@ -114,17 +114,17 @@ export function AccessModal({ open, onClose }: AccessModalProps) {
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
                 autoFocus
-                className="w-full border border-ink/25 bg-white px-4 py-3.5 text-body-m text-ink outline-none transition focus:border-gold"
+                className="w-full rounded-lg border border-night-border bg-midnight/60 px-4 py-3.5 text-body-m text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/25"
               />
-              {error && <p className="mt-2 text-body-s text-red-700">{error}</p>}
+              {error && <p className="mt-2 text-body-s text-red-400">{error}</p>}
               <button
                 type="submit"
                 disabled={saving}
-                className="mt-5 w-full rounded-pill bg-ink px-7 py-3.5 text-body-s font-medium text-bone transition hover:bg-gold hover:text-ink disabled:cursor-wait disabled:opacity-60"
+                className="mt-5 w-full rounded-pill bg-cyan-300 px-7 py-3.5 text-body-s font-semibold text-midnight transition hover:bg-cyan-200 disabled:cursor-wait disabled:opacity-60"
               >
-                {saving ? 'Saving…' : 'Request Access'}
+                {saving ? 'Saving…' : 'Join the waitlist'}
               </button>
-              <p className="mt-4 text-center text-micro uppercase text-ink/45">No spam. No data selling. Ever.</p>
+              <p className="mt-4 text-center text-micro uppercase text-slate-500">No spam. No data selling. Ever.</p>
             </form>
           </>
         )}

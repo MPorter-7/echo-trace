@@ -1,118 +1,187 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import { Menu, X } from 'lucide-react'
 
-export function Navigation() {
+interface NavigationProps {
+  onRequestAccess?: () => void
+}
+
+const NAV_LINKS = [
+  { label: 'How it works', href: '#how-it-works' },
+  { label: 'Features', href: '#features' },
+  { label: 'Pricing', href: '#pricing' },
+  { label: 'Privacy', href: '#privacy' },
+  { label: 'FAQ', href: '#faq' },
+]
+
+function scrollToHash(href: string) {
+  const el = document.querySelector(href)
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+export function Navigation({ onRequestAccess }: NavigationProps) {
   const [isScrolled, setIsScrolled] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
-    }
+    const handleScroll = () => setIsScrolled(window.scrollY > 24)
+    handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault()
-    const el = document.querySelector(href)
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [menuOpen])
+
+  // The mobile menu overlay is `md:hidden`, so if the viewport grows to the
+  // desktop breakpoint while the menu is open it disappears visually but leaves
+  // the body scroll-locked. Close it on that transition so the lock is released.
+  useEffect(() => {
+    const desktopQuery = window.matchMedia('(min-width: 768px)')
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setMenuOpen(false)
+    }
+    desktopQuery.addEventListener('change', handleChange)
+    return () => desktopQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  const handleHashClick = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    event.preventDefault()
+    setMenuOpen(false)
+    scrollToHash(href)
   }
 
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-nav h-16 flex items-center transition-all duration-300 ${
-          isScrolled ? 'bg-bone/90 text-ink backdrop-blur-xl' : 'bg-[#020817]/20 text-white backdrop-blur-sm'
+        aria-label="Primary"
+        className={`fixed inset-x-0 top-0 z-nav flex h-16 items-center border-b transition-colors duration-300 ${
+          isScrolled
+            ? 'border-night-border bg-midnight/90 backdrop-blur-xl'
+            : 'border-transparent bg-midnight/40 backdrop-blur-sm'
         }`}
-        style={{ borderBottom: `1px solid ${isScrolled ? 'rgba(26, 26, 26, 0.1)' : 'rgba(255, 255, 255, 0.14)'}` }}
       >
-        <div className="w-full max-w-content mx-auto px-5 md:px-10 lg:px-20 flex items-center justify-between">
-          <Link to="/" className="block h-12 w-44 overflow-hidden rounded-sm" aria-label="EchoTrace home">
-            <img
-              src="/images/brand/echotrace-logo.png"
-              alt="EchoTrace"
-              className="h-full w-full object-cover object-top-left"
-            />
+        <div className="mx-auto flex w-full max-w-content items-center justify-between px-5 md:px-10 lg:px-20">
+          <Link
+            to="/"
+            className="text-heading-m font-semibold tracking-tight text-white"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
+            EchoTrace
           </Link>
 
-          <div className="hidden md:flex items-center gap-10">
-            <a
-              href="#main"
-              onClick={(e) => handleNavClick(e, '#main')}
-              className="text-body-m text-current hover:text-cyan-300 transition-colors duration-200"
-            >
-              About
-            </a>
-            <a
-              href="#pricing"
-              onClick={(e) => handleNavClick(e, '#pricing')}
-              className="text-body-m text-current hover:text-cyan-300 transition-colors duration-200"
-            >
-              Pricing
-            </a>
-            <a
-              href="#security"
-              onClick={(e) => handleNavClick(e, '#security')}
-              className="text-body-m text-current hover:text-cyan-300 transition-colors duration-200"
-            >
-              Security
-            </a>
-          </div>
-
-          <div className="hidden items-center gap-3 md:flex">
-            <Link to="/login" className="px-3 py-2 text-body-s font-medium text-current hover:text-cyan-300">
-              Sign in
-            </Link>
-          </div>
-
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-current md:hidden"
-            aria-label="Toggle menu"
-          >
-            <svg width="20" height="14" viewBox="0 0 20 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <line x1="0" y1="1" x2="20" y2="1" />
-              <line x1="0" y1="7" x2="20" y2="7" />
-              <line x1="0" y1="13" x2="20" y2="13" />
-            </svg>
-          </button>
-        </div>
-      </nav>
-
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[200] bg-bone flex flex-col justify-center items-start px-10 md:hidden">
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            className="absolute top-5 right-5 text-ink p-2"
-            aria-label="Close menu"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <line x1="4" y1="4" x2="20" y2="20" />
-              <line x1="20" y1="4" x2="4" y2="20" />
-            </svg>
-          </button>
-          <div className="flex flex-col gap-8">
-            {[
-              { label: 'About', href: '#main' },
-              { label: 'Pricing', href: '#pricing' },
-              { label: 'Security', href: '#security' },
-            ].map((link) => (
+          <div className="hidden items-center gap-9 md:flex">
+            {NAV_LINKS.map((link) => (
               <a
-                key={link.label}
+                key={link.href}
                 href={link.href}
-                onClick={(e) => {
-                  handleNavClick(e, link.href)
-                  setMobileMenuOpen(false)
-                }}
-                className="text-4xl font-semibold text-ink hover:text-gold transition-colors duration-200"
+                onClick={(event) => handleHashClick(event, link.href)}
+                className="text-body-s font-medium text-slate-300 transition-colors hover:text-white"
               >
                 {link.label}
               </a>
             ))}
-            <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-4xl font-semibold text-ink hover:text-gold">
+          </div>
+
+          <div className="hidden items-center gap-3 md:flex">
+            <Link
+              to="/login"
+              className="rounded-pill px-4 py-2 text-body-s font-medium text-slate-300 transition-colors hover:text-white"
+            >
               Sign in
             </Link>
+            <Link
+              to="/signup"
+              className="rounded-pill bg-cyan-300 px-5 py-2.5 text-body-s font-semibold text-midnight transition-colors hover:bg-cyan-200"
+            >
+              Create your workspace
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            className="rounded-md p-2 text-white md:hidden"
+            aria-label="Open menu"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+          >
+            <Menu size={22} aria-hidden="true" />
+          </button>
+        </div>
+      </nav>
+
+      {menuOpen && (
+        <div
+          id="mobile-menu"
+          className="fixed inset-0 z-[200] flex flex-col bg-midnight px-6 py-6 md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-heading-m font-semibold text-white">EchoTrace</span>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-md p-2 text-white"
+              aria-label="Close menu"
+            >
+              <X size={24} aria-hidden="true" />
+            </button>
+          </div>
+
+          <nav aria-label="Mobile" className="mt-10 flex flex-col gap-2">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={(event) => handleHashClick(event, link.href)}
+                className="border-b border-night-border py-4 text-2xl font-semibold text-white"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="mt-auto flex flex-col gap-3">
+            <Link
+              to="/signup"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-pill bg-cyan-300 px-6 py-3.5 text-center text-body-s font-semibold text-midnight"
+            >
+              Create your workspace
+            </Link>
+            <Link
+              to="/login"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-pill border border-night-border px-6 py-3.5 text-center text-body-s font-medium text-white"
+            >
+              Sign in
+            </Link>
+            {onRequestAccess && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
+                  onRequestAccess()
+                }}
+                className="py-2 text-center text-body-s text-slate-400 underline underline-offset-4"
+              >
+                Join the email waitlist
+              </button>
+            )}
           </div>
         </div>
       )}
