@@ -9,12 +9,12 @@ import { reconstructionProgress } from '../../lib/reconstruction'
 import { supabase } from '../../lib/supabase'
 import type { TimelineEvent } from '../../types/echo'
 
-interface Counts { identifiers: number; events: number; pending: number; matches: number; accepted: number; archiveFiles: number; emailImports: number; emailFindings: number }
+interface Counts { identifiers: number; events: number; pending: number; matches: number; accepted: number; archiveFiles: number; emailImports: number; emailFindings: number; loginExportImports: number; loginExportFindings: number }
 
 export function DashboardHome() {
   const { user } = useAuth()
   const { plan, loading: billingLoading } = useBilling()
-  const [counts, setCounts] = useState<Counts>({ identifiers: 0, events: 0, pending: 0, matches: 0, accepted: 0, archiveFiles: 0, emailImports: 0, emailFindings: 0 })
+  const [counts, setCounts] = useState<Counts>({ identifiers: 0, events: 0, pending: 0, matches: 0, accepted: 0, archiveFiles: 0, emailImports: 0, emailFindings: 0, loginExportImports: 0, loginExportFindings: 0 })
   const [recent, setRecent] = useState<TimelineEvent[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -22,7 +22,7 @@ export function DashboardHome() {
     if (!supabase || !user) return
     const client = supabase
     const load = async () => {
-      const [identifiers, events, pending, matches, accepted, archiveFiles, emailImports, emailFindings, recentEvents] = await Promise.all([
+      const [identifiers, events, pending, matches, accepted, archiveFiles, emailImports, emailFindings, loginExportImports, loginExportFindings, recentEvents] = await Promise.all([
         client.from('identifiers').select('*', { count: 'exact', head: true }),
         client.from('timeline_events').select('*', { count: 'exact', head: true }),
         client.from('possible_matches').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -31,16 +31,18 @@ export function DashboardHome() {
         client.from('archive_files').select('*', { count: 'exact', head: true }),
         client.from('email_imports').select('*', { count: 'exact', head: true }),
         client.from('email_findings').select('*', { count: 'exact', head: true }),
+        client.from('login_exports').select('*', { count: 'exact', head: true }),
+        client.from('login_export_findings').select('*', { count: 'exact', head: true }),
         client.from('timeline_events').select('*').order('created_at', { ascending: false }).limit(5),
       ])
-      setCounts({ identifiers: identifiers.count ?? 0, events: events.count ?? 0, pending: pending.count ?? 0, matches: matches.count ?? 0, accepted: accepted.count ?? 0, archiveFiles: archiveFiles.count ?? 0, emailImports: emailImports.count ?? 0, emailFindings: emailFindings.count ?? 0 })
+      setCounts({ identifiers: identifiers.count ?? 0, events: events.count ?? 0, pending: pending.count ?? 0, matches: matches.count ?? 0, accepted: accepted.count ?? 0, archiveFiles: archiveFiles.count ?? 0, emailImports: emailImports.count ?? 0, emailFindings: emailFindings.count ?? 0, loginExportImports: loginExportImports.count ?? 0, loginExportFindings: loginExportFindings.count ?? 0 })
       setRecent((recentEvents.data ?? []) as TimelineEvent[])
       setLoading(false)
     }
     void load()
   }, [user])
 
-  const progress = reconstructionProgress({ identifiers: counts.identifiers, archiveFiles: counts.archiveFiles, matches: counts.matches, emailImports: counts.emailImports, emailFindings: counts.emailFindings }, counts.identifiers > 0)
+  const progress = reconstructionProgress({ identifiers: counts.identifiers, archiveFiles: counts.archiveFiles, matches: counts.matches, emailImports: counts.emailImports, emailFindings: counts.emailFindings, loginExportImports: counts.loginExportImports, loginExportFindings: counts.loginExportFindings }, counts.identifiers > 0)
   return (
     <>
       <PageHeader eyebrow="Your private workspace" title="Recover your history your way" description="Email is one option, not a requirement. Begin with what you remember: an old account, username, file, public source, or memory." />

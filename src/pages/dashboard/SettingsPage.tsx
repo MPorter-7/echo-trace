@@ -13,7 +13,7 @@ import { downloadText, rowsToCsv } from '../../lib/export'
 import { supabase } from '../../lib/supabase'
 import { validateDisplayName } from '../../lib/validation'
 
-const EXPORT_TABLES = ['profiles', 'identifiers', 'timeline_events', 'possible_matches', 'email_imports', 'email_findings', 'archive_files', 'event_files', 'user_consents', 'activity_log'] as const
+const EXPORT_TABLES = ['profiles', 'identifiers', 'timeline_events', 'possible_matches', 'email_imports', 'email_findings', 'login_exports', 'login_export_findings', 'archive_files', 'event_files', 'user_consents', 'activity_log'] as const
 
 export function SettingsPage() {
   const { user, updatePassword, signOut } = useAuth()

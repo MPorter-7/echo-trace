@@ -5,6 +5,7 @@ import {
   SearchCheck,
   Compass,
   Upload,
+  KeyRound,
   Fingerprint,
   DownloadCloud,
 } from 'lucide-react'
@@ -41,6 +42,11 @@ const FEATURES = [
     icon: Upload,
     title: 'Google Takeout & mailbox import',
     body: 'Bring in .mbox and Takeout exports from common providers. Files are analyzed locally in your browser, not uploaded wholesale.',
+  },
+  {
+    icon: KeyRound,
+    title: 'Saved-logins import',
+    body: 'Import a saved-logins export from your browser or password manager. Direct evidence of every account you had — the password column is never read or stored.',
   },
   {
     icon: Fingerprint,

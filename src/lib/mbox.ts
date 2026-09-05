@@ -1,3 +1,5 @@
+import { isSuspiciousDomain, registrableDomain, serviceNameFromDomain } from './domain'
+
 export const EMAIL_EVIDENCE_KINDS = ['account_signup', 'email_verification', 'password_reset', 'receipt', 'account_notice'] as const
 export const MAX_RECOMMENDED_FINDINGS = 50
 export const AUTO_SELECT_CONFIDENCE_THRESHOLD = 80
@@ -58,16 +60,9 @@ const MAX_HEADER_CHARS = 32 * 1024
 const MAX_BODY_SAMPLE_CHARS = 24 * 1024
 const MAX_PENDING_LINE_CHARS = 256 * 1024
 
-const COMPOUND_PUBLIC_SUFFIXES = new Set(['co.jp', 'co.nz', 'co.uk', 'com.au', 'com.br', 'com.mx'])
-
 const CONSUMER_MAIL_DOMAINS = new Set(['aol.com', 'gmail.com', 'gmx.com', 'googlemail.com', 'hotmail.com', 'icloud.com', 'mail.com', 'outlook.com', 'proton.me', 'protonmail.com', 'yahoo.com'])
 
 const DELIVERY_INFRASTRUCTURE_DOMAINS = new Set(['amazonses.com', 'campaign-archive.com', 'constantcontact.com', 'customer.io', 'mailchimpapp.net', 'mailgun.org', 'sendgrid.net', 'sparkpostmail.com'])
-
-const CANONICAL_DOMAIN_ALIASES = new Map([
-  ['facebookmail.com', 'facebook.com'],
-  ['twitter.com', 'x.com'],
-])
 
 const SPAM_PATTERNS = [
   /\b(?:casino|jackpot|lottery|sweepstakes)\b/i,
@@ -164,23 +159,6 @@ function extractSender(from: string) {
   return { domain, displayName }
 }
 
-function registrableDomain(domain: string) {
-  const normalized = domain.toLowerCase().replace(/^www\./, '').replace(/\.+$/, '')
-  const parts = normalized.split('.').filter(Boolean)
-  if (parts.length <= 2) return CANONICAL_DOMAIN_ALIASES.get(normalized) ?? normalized
-  const suffixLength = COMPOUND_PUBLIC_SUFFIXES.has(parts.slice(-2).join('.')) ? 2 : 1
-  const root = parts.slice(-(suffixLength + 1)).join('.')
-  return CANONICAL_DOMAIN_ALIASES.get(root) ?? root
-}
-
-function serviceNameFromDomain(domain: string) {
-  const parts = domain.split('.').filter(Boolean)
-  const compoundSuffix = parts.length >= 3 && COMPOUND_PUBLIC_SUFFIXES.has(parts.slice(-2).join('.'))
-  const brand = parts.at(compoundSuffix ? -3 : -2) ?? parts[0] ?? domain
-  if (brand.toLowerCase() === 'x') return 'X'
-  return brand.split(/[-_]/).filter(Boolean).map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(' ')
-}
-
 function isLikelySpamMessage(message: ParsedEmailMessage) {
   const searchable = `${message.subject}\n${message.bodySample.slice(0, 2_000)}`
   return SPAM_PATTERNS.some((pattern) => pattern.test(searchable))
@@ -190,11 +168,6 @@ function isBulkMessage(message: ParsedEmailMessage) {
   return Boolean(message.listId?.trim() || message.listUnsubscribe?.trim() || /\b(?:bulk|junk|list)\b/i.test(message.precedence ?? ''))
 }
 
-function isSuspiciousDomain(domain: string) {
-  const brand = domain.split('.')[0] ?? ''
-  const digits = [...brand].filter((character) => /\d/.test(character)).length
-  return domain.includes('xn--') || brand.length > 38 || (brand.length >= 10 && digits / brand.length >= 0.4) || (brand.match(/-/g)?.length ?? 0) >= 4
-}
 function classifyText(value: string) {
   return EMAIL_EVIDENCE_KINDS.filter((kind) => evidencePatterns[kind].some((pattern) => pattern.test(value)))
 }

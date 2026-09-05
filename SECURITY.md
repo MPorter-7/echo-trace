@@ -41,6 +41,16 @@ After local analysis, no finding is stored by default. The user must select find
 
 The parser caps retained header and body samples and streams files instead of loading them all into memory. Cleanup runs locally: sender subdomains are combined, consumer-mailbox and delivery-infrastructure senders are suppressed, obvious scam language is removed, and weak one-message receipt matches are not shown. The analyzer recognizes evidence patterns; it does not assert account ownership. Forwarded messages and shared inboxes can create false positives, so user approval is still required before any summary is saved or becomes a timeline event.
 
+## Saved-logins recovery
+
+Saved-logins recovery uses a saved-logins `.csv` export selected by the user (Chrome, Firefox, Edge, Safari, Bitwarden, 1Password, LastPass, and compatible tools). The file is streamed and parsed locally in the browser; EchoTrace does not connect to a browser account, cloud sync service, or password-manager vault.
+
+The parser (`src/lib/loginExport.ts`) only ever looks up a column by its header name when that header matches a known site/username/name/type alias. Any header containing `password`, `pwd`, `secret`, `otp`, `totp`, or `pin` is excluded from every role before column matching happens, so a password or one-time-code column can never be selected as a site, username, or label. The value of any column the parser does not explicitly recognize — including the password column — is read into a transient per-row buffer during CSV parsing and then discarded; it is never assigned to a finding, logged, rendered, or sent to Supabase.
+
+After local analysis, no finding is stored by default. The user must select findings explicitly. Stored records contain only import metadata plus aggregate service name, domain, up to 8 usernames, saved-entry count, an explainable confidence estimate, and review status. `login_exports` and `login_export_findings` use owner-only RLS, cross-table policies verify that linked imports and timeline events belong to the same authenticated user, and neither table's schema defines a column capable of holding a password or secret. Delete-all and data export include these tables.
+
+A saved login is treated as stronger evidence than inferred email signals because it is a first-party statement that the user created that credential; the confidence model reflects that with a high baseline score, downgraded automatically only when the site's domain pattern looks unusual (the same suspicious-domain heuristic used for email findings).
+
 ## Account deletion
 
 Deleting application data is owner-scoped and does not need elevated credentials. Deleting a Supabase Auth user is performed only inside `supabase/functions/delete-account`, which validates the caller's JWT before using the runtime service-role secret. Before deleting the Auth user, the function lists archive metadata and Storage objects, deletes every owner-scoped object in checked batches, and aborts if any listing or deletion request fails. The service-role secret is never bundled into the frontend.

@@ -6,6 +6,8 @@ export interface ReconstructionCounts {
   matches: number
   emailImports: number
   emailFindings: number
+  loginExportImports: number
+  loginExportFindings: number
 }
 
 export function normalizeAccountEmail(email: string | null | undefined) {
@@ -37,8 +39,8 @@ export function reconstructionProgress(counts: ReconstructionCounts, hasStarting
   const completed = [
     hasStartingEmail,
     counts.identifiers > 1,
-    counts.archiveFiles > 0 || counts.emailImports > 0,
-    counts.matches > 0 || counts.emailFindings > 0,
+    counts.archiveFiles > 0 || counts.emailImports > 0 || counts.loginExportImports > 0,
+    counts.matches > 0 || counts.emailFindings > 0 || counts.loginExportFindings > 0,
   ].filter(Boolean).length
 
   return completed * 25
