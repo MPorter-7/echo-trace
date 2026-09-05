@@ -17,6 +17,7 @@ const AccountDiscoveryPage = lazy(() => import('./pages/dashboard/AccountDiscove
 const AccountLeadsPage = lazy(() => import('./pages/dashboard/AccountLeadsPage').then((module) => ({ default: module.AccountLeadsPage })))
 const ReconstructionPage = lazy(() => import('./pages/dashboard/ReconstructionPage').then((module) => ({ default: module.ReconstructionPage })))
 const EmailHistoryPage = lazy(() => import('./pages/dashboard/EmailHistoryPage').then((module) => ({ default: module.EmailHistoryPage })))
+const LoginExportPage = lazy(() => import('./pages/dashboard/LoginExportPage').then((module) => ({ default: module.LoginExportPage })))
 const IdentifiersPage = lazy(() => import('./pages/dashboard/IdentifiersPage').then((module) => ({ default: module.IdentifiersPage })))
 const TimelinePage = lazy(() => import('./pages/dashboard/TimelinePage').then((module) => ({ default: module.TimelinePage })))
 const MatchesPage = lazy(() => import('./pages/dashboard/MatchesPage').then((module) => ({ default: module.MatchesPage })))
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="leads" element={<AccountLeadsPage />} />
               <Route path="reconstruct" element={<ReconstructionPage />} />
               <Route path="email-history" element={<EmailHistoryPage />} />
+              <Route path="login-export" element={<LoginExportPage />} />
               <Route path="identifiers" element={<IdentifiersPage />} />
               <Route path="timeline" element={<TimelinePage />} />
               <Route path="matches" element={<MatchesPage />} />

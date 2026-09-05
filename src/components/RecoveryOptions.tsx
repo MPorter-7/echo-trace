@@ -1,4 +1,4 @@
-import { Archive, ArrowRight, Fingerprint, History, MailSearch, SearchCheck, Sparkles } from 'lucide-react'
+import { Archive, ArrowRight, Fingerprint, History, KeyRound, MailSearch, SearchCheck, Sparkles } from 'lucide-react'
 import { Link } from 'react-router'
 
 const recoveryOptions = [
@@ -36,6 +36,13 @@ const recoveryOptions = [
     to: '/dashboard/email-history',
     label: 'Import email history',
     icon: MailSearch,
+  },
+  {
+    title: 'Import saved logins',
+    description: 'Export saved logins from Chrome, Firefox, Edge, Safari, or a password manager. A saved sign-in is direct evidence of an account — passwords are never read or stored.',
+    to: '/dashboard/login-export',
+    label: 'Import saved logins',
+    icon: KeyRound,
   },
   {
     title: 'Start without email',

@@ -25,7 +25,7 @@ This is a production database action. Review the SQL first and make a Supabase b
 
 1. Open **Supabase → SQL Editor → New query**.
 2. For a fresh project, run every file in `supabase/migrations` in filename order.
-3. For a project that already ran `202608030001_echotrace_mvp.sql`, run each newer migration it has not yet applied, in filename order. Email History Upload adds `202608040002_email_history_upload.sql`. The provider-neutral upload flow accepts `.mbox` exports and requires no external email API configuration.
+3. For a project that already ran `202608030001_echotrace_mvp.sql`, run each newer migration it has not yet applied, in filename order. Email History Upload adds `202608040002_email_history_upload.sql`. The provider-neutral upload flow accepts `.mbox` exports and requires no external email API configuration. Saved-Logins Import adds `202609050001_login_export_import.sql` and accepts `.csv` exports from browsers and password managers; no column in that migration can hold a password or secret.
 4. Confirm the existing `waitlist` table and its anonymous insert policy still exist.
 5. Confirm the `private-archives` Storage bucket is marked private.
 
@@ -79,5 +79,5 @@ Redeploy after saving. `vercel.json` rewrites client routes such as `/dashboard/
 3. Test login, logout, forgot password, and password reset.
 4. Accept the self-recovery consent.
 5. Complete the two-user RLS test in TESTING.md.
-6. Test identifier, provider-neutral `.mbox` upload, timeline, match, archive, export, and deletion flows. Verify raw `.mbox` data is never sent and only selected aggregate findings reach Supabase. For delete-all, simulate a failed Storage request and confirm database records remain.
+6. Test identifier, provider-neutral `.mbox` upload, saved-logins `.csv` upload, timeline, match, archive, export, and deletion flows. Verify raw `.mbox` data and saved passwords are never sent and only selected aggregate findings reach Supabase. For delete-all, simulate a failed Storage request and confirm database records remain.
 7. Confirm `/privacy`, `/terms`, and direct dashboard URLs load on Vercel.

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Archive, CreditCard, Fingerprint, LayoutDashboard, LogOut, MailSearch, Menu, ScanSearch, SearchCheck, Settings, Sparkles, Target, Waypoints, X } from 'lucide-react'
+import { Archive, CreditCard, Fingerprint, KeyRound, LayoutDashboard, LogOut, MailSearch, Menu, ScanSearch, SearchCheck, Settings, Sparkles, Target, Waypoints, X } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useAuth } from '../auth/AuthContext'
@@ -13,6 +13,7 @@ const links = [
   { to: '/dashboard/identifiers', label: 'My identity clues', icon: Fingerprint },
   { to: '/dashboard/matches', label: 'Guided public search', icon: SearchCheck },
   { to: '/dashboard/email-history', label: 'Import email archive', icon: MailSearch },
+  { to: '/dashboard/login-export', label: 'Import saved logins', icon: KeyRound },
   { to: '/dashboard/timeline', label: 'My timeline', icon: Waypoints },
   { to: '/dashboard/archive', label: 'My files', icon: Archive },
   { to: '/dashboard/settings#billing', label: 'Plans & billing', icon: CreditCard },

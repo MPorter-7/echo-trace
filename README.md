@@ -12,6 +12,7 @@ The existing public landing page and Supabase waitlist remain at `/`. Authentica
 - Required self-recovery consent with a versioned audit record
 - Evidence-first reconstruction onboarding that begins with the verified signup email and keeps manual memories optional
 - Provider-neutral local `.mbox` imports from Gmail via Google Takeout, Yahoo, Proton Mail, Apple Mail, Thunderbird, and other compatible exports; raw mailbox content remains in the browser and only user-approved aggregate findings are saved
+- Local saved-logins `.csv` import from Chrome, Firefox, Edge, Safari, Bitwarden, 1Password, and LastPass; only the site and username are read, the password column is never opened, stored, or transmitted
 - Private identifiers with clear separation between verified account email and unverified historical emails
 - Timeline CRUD with exact, month/year, year-only, and unknown dates; search, filters, sorting, and two views
 - User-reviewed possible matches with sources, retrieval dates, status controls, and deterministic confidence explanations

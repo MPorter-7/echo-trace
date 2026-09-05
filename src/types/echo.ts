@@ -102,3 +102,32 @@ export interface EmailFinding {
   created_at: string
   updated_at: string
 }
+
+export interface LoginExportImport {
+  id: string
+  user_id: string
+  original_name: string
+  size_bytes: number
+  source_kind: 'csv'
+  rows_scanned: number
+  candidate_rows: number
+  findings_count: number
+  processed_locally: boolean
+  created_at: string
+}
+
+export interface LoginExportFinding {
+  id: string
+  user_id: string
+  import_id: string
+  service_name: string
+  domain: string
+  usernames: string[]
+  row_count: number
+  confidence_score: number
+  confidence_explanation: string
+  status: MatchStatus
+  timeline_event_id: string | null
+  created_at: string
+  updated_at: string
+}

@@ -10,7 +10,7 @@ import { findStartingEmail, hasVerifiedAccountEmail, reconstructionProgress, typ
 import { supabase } from '../../lib/supabase'
 import type { Identifier } from '../../types/echo'
 
-const emptyCounts: ReconstructionCounts = { identifiers: 0, archiveFiles: 0, matches: 0, emailImports: 0, emailFindings: 0 }
+const emptyCounts: ReconstructionCounts = { identifiers: 0, archiveFiles: 0, matches: 0, emailImports: 0, emailFindings: 0, loginExportImports: 0, loginExportFindings: 0 }
 
 export function ReconstructionPage() {
   const { user } = useAuth()
@@ -23,12 +23,14 @@ export function ReconstructionPage() {
     const client = supabase
 
     const load = async () => {
-      const [identifierResult, archiveResult, matchResult, emailImportResult, emailFindingResult] = await Promise.all([
+      const [identifierResult, archiveResult, matchResult, emailImportResult, emailFindingResult, loginExportImportResult, loginExportFindingResult] = await Promise.all([
         client.from('identifiers').select('*').order('created_at', { ascending: true }),
         client.from('archive_files').select('*', { count: 'exact', head: true }),
         client.from('possible_matches').select('*', { count: 'exact', head: true }),
         client.from('email_imports').select('*', { count: 'exact', head: true }),
         client.from('email_findings').select('*', { count: 'exact', head: true }),
+        client.from('login_exports').select('*', { count: 'exact', head: true }),
+        client.from('login_export_findings').select('*', { count: 'exact', head: true }),
       ])
 
       let nextIdentifiers = (identifierResult.data ?? []) as Identifier[]
@@ -51,7 +53,7 @@ export function ReconstructionPage() {
         }
       }
 
-      if (identifierResult.error || archiveResult.error || matchResult.error || emailImportResult.error || emailFindingResult.error) {
+      if (identifierResult.error || archiveResult.error || matchResult.error || emailImportResult.error || emailFindingResult.error || loginExportImportResult.error || loginExportFindingResult.error) {
         toast.error('Your reconstruction status could not be loaded.')
       }
 
@@ -62,6 +64,8 @@ export function ReconstructionPage() {
         matches: matchResult.count ?? 0,
         emailImports: emailImportResult.count ?? 0,
         emailFindings: emailFindingResult.count ?? 0,
+        loginExportImports: loginExportImportResult.count ?? 0,
+        loginExportFindings: loginExportFindingResult.count ?? 0,
       })
       setLoading(false)
     }
@@ -87,18 +91,18 @@ export function ReconstructionPage() {
       action: { to: '/dashboard/identifiers', label: 'Add an old email or username' },
     },
     {
-      title: 'Import your email history',
-      description: 'Export your own mailbox, then let EchoTrace check it locally for likely account emails.',
-      complete: counts.archiveFiles > 0 || counts.emailImports > 0,
+      title: 'Import your email history or saved logins',
+      description: 'Export your own mailbox or your browser/password-manager saved logins, then let EchoTrace check them locally for account evidence.',
+      complete: counts.archiveFiles > 0 || counts.emailImports > 0 || counts.loginExportImports > 0,
       icon: Zap,
       action: { to: '/dashboard/email-history', label: 'Find my accounts' },
     },
     {
       title: 'Review possible matches',
       description: 'Keep the original source, inspect the score, and accept or reject every possible account yourself.',
-      complete: counts.matches > 0 || counts.emailFindings > 0,
+      complete: counts.matches > 0 || counts.emailFindings > 0 || counts.loginExportFindings > 0,
       icon: SearchCheck,
-      action: { to: counts.emailFindings > 0 ? '/dashboard/email-history' : '/dashboard/matches', label: 'Open evidence review' },
+      action: { to: counts.emailFindings > 0 || counts.loginExportFindings > 0 ? (counts.loginExportFindings > 0 ? '/dashboard/login-export' : '/dashboard/email-history') : '/dashboard/matches', label: 'Open evidence review' },
     },
   ]
 
