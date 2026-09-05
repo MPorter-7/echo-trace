@@ -8,6 +8,7 @@ import { isSuspiciousDomain, registrableDomain, serviceNameFromDomain } from './
 
 const MAX_FIELD_CHARS = 8 * 1024
 const MAX_USERNAMES_KEPT = 8
+const MAX_USERNAME_CHARS = 320
 
 const URL_HEADER_ALIASES = new Set(['url', 'urls', 'login uri', 'origin url', 'website', 'web site', 'hostname', 'uri', 'site'])
 const USERNAME_HEADER_ALIASES = new Set(['username', 'login username', 'user name', 'login', 'account', 'email'])
@@ -103,21 +104,37 @@ export class LoginExportAnalyzer {
   private field = ''
   private row: string[] = []
   private inQuotes = false
+  private pendingQuote = false
   private headerIndex: HeaderIndex | null = null
   private findings = new Map<string, MutableLoginFinding>()
   private rowsScanned = 0
   private candidateRows = 0
 
   addChunk(chunk: string) {
-    for (let position = 0; position < chunk.length; position += 1) {
+    let start = 0
+    if (this.pendingQuote) {
+      this.pendingQuote = false
+      if (chunk[0] === '"') {
+        if (this.field.length < MAX_FIELD_CHARS) this.field += '"'
+        start = 1
+      } else {
+        this.inQuotes = false
+      }
+    }
+
+    for (let position = start; position < chunk.length; position += 1) {
       const character = chunk[position]
       if (this.inQuotes) {
         if (character === '"') {
-          if (chunk[position + 1] === '"') {
-            if (this.field.length < MAX_FIELD_CHARS) this.field += '"'
-            position += 1
+          if (position + 1 < chunk.length) {
+            if (chunk[position + 1] === '"') {
+              if (this.field.length < MAX_FIELD_CHARS) this.field += '"'
+              position += 1
+            } else {
+              this.inQuotes = false
+            }
           } else {
-            this.inQuotes = false
+            this.pendingQuote = true
           }
         } else if (this.field.length < MAX_FIELD_CHARS) {
           this.field += character
@@ -156,7 +173,7 @@ export class LoginExportAnalyzer {
     const domain = extractDomain(rawUrl)
     if (!domain) return
 
-    const username = index.username >= 0 ? (row[index.username] ?? '').trim() : ''
+    const username = index.username >= 0 ? (row[index.username] ?? '').trim().slice(0, MAX_USERNAME_CHARS) : ''
 
     this.candidateRows += 1
     const finding = this.findings.get(domain) ?? { domain, usernames: new Set<string>(), rowCount: 0 }
@@ -166,6 +183,10 @@ export class LoginExportAnalyzer {
   }
 
   finish(): LoginExportAnalysis {
+    if (this.pendingQuote) {
+      this.pendingQuote = false
+      this.inQuotes = false
+    }
     if (this.inQuotes || this.field !== '' || this.row.length > 0) {
       this.row.push(this.field)
       this.field = ''

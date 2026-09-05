@@ -72,6 +72,19 @@ describe('Bitwarden-style saved-logins export', () => {
     const result = analyze(csv, splitPoint)
     expect(result.findings).toMatchObject([{ domain: 'example.org', usernames: ['dana'] }])
   })
+
+  it('does not corrupt following rows when a chunk splits between the two characters of an escaped quote', () => {
+    const row1 = `Personal,0,login,Escaped,"Quote""here",,0,https://example.org,dana,${SECRET},`
+    const row2 = `Personal,0,login,Second,,,0,https://second.example,erin,${SECRET},`
+    const csv = `${header}\n${row1}\n${row2}\n`
+    const splitPoint = csv.indexOf('""here') + 1
+    const result = analyze(csv, splitPoint)
+    expect(result.findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ domain: 'example.org', usernames: ['dana'] }),
+      expect.objectContaining({ domain: 'second.example', usernames: ['erin'] }),
+    ]))
+    expect(result.findings).toHaveLength(2)
+  })
 })
 
 describe('non-web and low-signal rows', () => {
@@ -88,6 +101,20 @@ describe('non-web and low-signal rows', () => {
     const result = analyze(csv)
     expect(result.findings[0].recommended).toBe(false)
     expect(result.findings[0].confidenceScore).toBeLessThan(70)
+  })
+
+  it('truncates an unreasonably long username instead of storing it in full', () => {
+    const hugeUsername = 'a'.repeat(1000)
+    const csv = `url,username,password\nhttps://example.com,${hugeUsername},${SECRET}\n`
+    const result = analyze(csv)
+    expect(result.findings[0].usernames[0].length).toBe(320)
+  })
+
+  it('keeps distinct accounts under an unlisted compound suffix separate instead of merging them', () => {
+    const csv = `url,username,password\nhttps://foo.co.in,ivan,${SECRET}\nhttps://bar.co.in,judy,${SECRET}\n`
+    const result = analyze(csv)
+    expect(result.findings).toHaveLength(2)
+    expect(result.findings.map((finding) => finding.domain).sort()).toEqual(['bar.co.in', 'foo.co.in'])
   })
 })
 
