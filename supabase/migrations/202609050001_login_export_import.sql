@@ -16,6 +16,13 @@ create table if not exists public.login_exports (
   created_at timestamptz not null default now()
 );
 
+-- Postgres forbids subqueries in CHECK expressions, so the per-element length
+-- bound below is enforced through this immutable helper instead of EXISTS/unnest.
+create or replace function public.max_text_array_element_length(items text[])
+returns integer language sql immutable set search_path = '' as $$
+  select coalesce(max(char_length(item)), 0) from unnest(items) as item
+$$;
+
 create table if not exists public.login_export_findings (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -24,7 +31,7 @@ create table if not exists public.login_export_findings (
   domain text not null check (char_length(domain) between 3 and 253),
   usernames text[] not null default '{}' check (
     cardinality(usernames) <= 8
-    and not exists (select 1 from unnest(usernames) as u(value) where char_length(u.value) > 320)
+    and public.max_text_array_element_length(usernames) <= 320
   ),
   row_count integer not null check (row_count > 0),
   confidence_score integer not null check (confidence_score between 0 and 100),

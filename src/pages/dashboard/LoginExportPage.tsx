@@ -28,7 +28,7 @@ export function LoginExportPage() {
   const [analyzing, setAnalyzing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [creatingTimelineId, setCreatingTimelineId] = useState<string | null>(null)
+  const [creatingTimelineIds, setCreatingTimelineIds] = useState<Set<string>>(new Set())
 
   const load = async () => {
     if (!supabase) return
@@ -189,9 +189,18 @@ export function LoginExportPage() {
     }
   }
 
+  const setTimelineCreating = (findingId: string, creating: boolean) => {
+    setCreatingTimelineIds((current) => {
+      const next = new Set(current)
+      if (creating) next.add(findingId)
+      else next.delete(findingId)
+      return next
+    })
+  }
+
   const addToTimeline = async (finding: LoginExportFinding) => {
-    if (!supabase || !user || finding.status !== 'accepted' || finding.timeline_event_id || creatingTimelineId === finding.id) return
-    setCreatingTimelineId(finding.id)
+    if (!supabase || !user || finding.status !== 'accepted' || finding.timeline_event_id || creatingTimelineIds.has(finding.id)) return
+    setTimelineCreating(finding.id, true)
     const eventResult = await supabase.from('timeline_events').insert({
       user_id: user.id,
       title: `${finding.service_name} account`,
@@ -207,17 +216,17 @@ export function LoginExportPage() {
       notes: `Created from saved-logins finding ${finding.id}. The saved password was never read or stored.`,
     }).select('id').single()
     if (eventResult.error || !eventResult.data) {
-      setCreatingTimelineId(null)
+      setTimelineCreating(finding.id, false)
       return toast.error('The timeline event could not be created.')
     }
     const linkResult = await supabase.from('login_export_findings').update({ timeline_event_id: eventResult.data.id }).eq('id', finding.id)
     if (linkResult.error) {
       await supabase.from('timeline_events').delete().eq('id', eventResult.data.id)
-      setCreatingTimelineId(null)
+      setTimelineCreating(finding.id, false)
       return toast.error('The timeline event could not be linked, so no partial record was kept.')
     }
     setFindings((current) => current.map((item) => item.id === finding.id ? { ...item, timeline_event_id: eventResult.data.id } : item))
-    setCreatingTimelineId(null)
+    setTimelineCreating(finding.id, false)
     toast.success('Accepted finding added to your timeline.')
   }
 
@@ -298,7 +307,7 @@ export function LoginExportPage() {
             {finding.usernames.length > 0 && <p className="mt-4 text-body-s text-ink/60">Username(s): {finding.usernames.join(', ')}</p>}
             <p className="mt-4 text-body-s leading-relaxed text-ink/60">{finding.confidence_explanation}</p>
             <div className="mt-4 border border-ink/10 bg-bone p-4 text-body-s text-ink/55"><p className="truncate">Import: {importNames.get(finding.import_id) ?? 'Deleted import'}</p><p className="mt-1 text-micro">Stored summary only; no password was ever read or stored.</p></div>
-            <div className="mt-5 flex flex-wrap gap-2"><button type="button" disabled={finding.status === 'accepted'} onClick={() => void setStatus(finding, 'accepted')} className={secondaryButtonClass}><Check size={15} className="mr-1" />Accept</button><button type="button" disabled={finding.status === 'uncertain'} onClick={() => void setStatus(finding, 'uncertain')} className={secondaryButtonClass}><CircleHelp size={15} className="mr-1" />Uncertain</button><button type="button" disabled={finding.status === 'rejected'} onClick={() => void setStatus(finding, 'rejected')} className={`${secondaryButtonClass} text-red-700`}><X size={15} className="mr-1" />Reject</button>{finding.status === 'accepted' && !finding.timeline_event_id && <button type="button" disabled={creatingTimelineId === finding.id} onClick={() => void addToTimeline(finding)} className={primaryButtonClass}><History size={15} className="mr-1" />Add to timeline</button>}{finding.timeline_event_id && <span className="inline-flex items-center rounded-pill bg-emerald-50 px-4 py-2 text-body-s text-emerald-800"><Check size={15} className="mr-1" />Added to timeline</span>}</div>
+            <div className="mt-5 flex flex-wrap gap-2"><button type="button" disabled={finding.status === 'accepted'} onClick={() => void setStatus(finding, 'accepted')} className={secondaryButtonClass}><Check size={15} className="mr-1" />Accept</button><button type="button" disabled={finding.status === 'uncertain'} onClick={() => void setStatus(finding, 'uncertain')} className={secondaryButtonClass}><CircleHelp size={15} className="mr-1" />Uncertain</button><button type="button" disabled={finding.status === 'rejected'} onClick={() => void setStatus(finding, 'rejected')} className={`${secondaryButtonClass} text-red-700`}><X size={15} className="mr-1" />Reject</button>{finding.status === 'accepted' && !finding.timeline_event_id && <button type="button" disabled={creatingTimelineIds.has(finding.id)} onClick={() => void addToTimeline(finding)} className={primaryButtonClass}><History size={15} className="mr-1" />Add to timeline</button>}{finding.timeline_event_id && <span className="inline-flex items-center rounded-pill bg-emerald-50 px-4 py-2 text-body-s text-emerald-800"><Check size={15} className="mr-1" />Added to timeline</span>}</div>
           </article>
         ))}</div> : <div className="mt-5"><EmptyState title="No saved-logins findings saved" description="Import a saved-logins .csv export, then choose which accounts EchoTrace may save." /></div>}
       </section>
