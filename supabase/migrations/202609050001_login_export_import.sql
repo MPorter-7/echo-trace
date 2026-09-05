@@ -22,7 +22,10 @@ create table if not exists public.login_export_findings (
   import_id uuid not null references public.login_exports(id) on delete cascade,
   service_name text not null check (char_length(service_name) between 1 and 160),
   domain text not null check (char_length(domain) between 3 and 253),
-  usernames text[] not null default '{}' check (cardinality(usernames) <= 8),
+  usernames text[] not null default '{}' check (
+    cardinality(usernames) <= 8
+    and not exists (select 1 from unnest(usernames) as u(value) where char_length(u.value) > 320)
+  ),
   row_count integer not null check (row_count > 0),
   confidence_score integer not null check (confidence_score between 0 and 100),
   confidence_explanation text not null check (char_length(confidence_explanation) between 1 and 2000),

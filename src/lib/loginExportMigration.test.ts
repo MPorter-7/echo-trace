@@ -19,6 +19,10 @@ describe('saved-logins persistence migration', () => {
     expect(migration).not.toMatch(/\btotp\w*\s+text/i)
   })
 
+  it('bounds each stored username to the timeline field length limit', () => {
+    expect(migration).toContain('char_length(u.value) > 320')
+  })
+
   it('includes login exports in delete-all application data', () => {
     expect(migration).toContain('delete from public.login_exports where user_id = current_user_id')
     expect(migration).toContain('delete from public.profiles where id = current_user_id')
