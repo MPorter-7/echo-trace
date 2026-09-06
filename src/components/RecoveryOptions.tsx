@@ -39,7 +39,7 @@ const recoveryOptions = [
   },
   {
     title: 'Import saved logins',
-    description: 'Export saved logins from Chrome, Firefox, Edge, Safari, or a password manager. A saved sign-in is direct evidence of an account — passwords are never read or stored.',
+    description: 'Export saved logins from Chrome, Firefox, Edge, Safari, or a password manager. A saved sign-in is direct evidence of an account — passwords are never stored or transmitted.',
     to: '/dashboard/login-export',
     label: 'Import saved logins',
     icon: KeyRound,

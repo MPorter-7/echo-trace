@@ -6,7 +6,7 @@ const STEPS = [
   {
     icon: Upload,
     title: 'Connect or import your own data',
-    body: 'Verify your email, then import a Google Takeout or mailbox export to analyze locally. Nothing is pulled in without your say-so.',
+    body: 'Verify your email, then import saved logins from your browser or password manager, or a Google Takeout mailbox export — whichever you already have. Everything is analyzed locally, and nothing is pulled in without your say-so.',
   },
   {
     icon: Eye,
