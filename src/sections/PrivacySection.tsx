@@ -17,7 +17,7 @@ const PRINCIPLES = [
   {
     icon: Laptop,
     title: 'Local processing where it matters',
-    body: 'Mailbox, Takeout, and saved-logins imports are analyzed in your browser — passwords are never read, and raw content never reaches our servers.',
+    body: 'Mailbox, Takeout, and saved-logins imports are analyzed in your browser — passwords are never stored or sent, and raw content never reaches our servers.',
   },
   {
     icon: Trash2,
