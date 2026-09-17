@@ -175,7 +175,7 @@ export function LoginExportPage() {
     setProgress(0)
     const input = document.querySelector<HTMLInputElement>('#login-export-upload')
     if (input) input.value = ''
-    toast.success('Selected findings saved privately for your review. Passwords were never read or stored.')
+    toast.success('Selected findings saved privately for your review. Passwords were never stored or sent.')
     void load()
   }
 
@@ -213,7 +213,7 @@ export function LoginExportPage() {
       event_type: 'account_created',
       confidence: confidenceLevel(finding.confidence_score),
       tags: ['login-export-upload', 'accepted-finding'],
-      notes: `Created from saved-logins finding ${finding.id}. The saved password was never read or stored.`,
+      notes: `Created from saved-logins finding ${finding.id}. The saved password was never stored or sent.`,
     }).select('id').single()
     if (eventResult.error || !eventResult.data) {
       setTimelineCreating(finding.id, false)
@@ -257,8 +257,8 @@ export function LoginExportPage() {
             <p className="mt-4 max-w-2xl text-body-s leading-relaxed text-bone/65">Chrome, Firefox, Edge, Safari, Bitwarden, 1Password, and LastPass can all export your saved logins as a `.csv` file. Upload it here to find every site you have an account with.</p>
           </div>
           <div className="border border-emerald-400/25 bg-emerald-400/10 p-5 text-body-s text-emerald-100">
-            <p className="flex items-center gap-2 font-medium"><LockKeyhole size={18} />Passwords are never read</p>
-            <p className="mt-3 leading-relaxed text-emerald-100/70">This file is analyzed on this device only. EchoTrace only reads the site and username columns from your export. The password column is never opened, stored, logged, or sent anywhere — not even temporarily.</p>
+            <p className="flex items-center gap-2 font-medium"><LockKeyhole size={18} />Passwords never leave this device</p>
+            <p className="mt-3 leading-relaxed text-emerald-100/70">This file is analyzed on this device only. EchoTrace extracts the site and username from your export; the password column is discarded the instant each row is parsed and is never saved, logged, or sent anywhere.</p>
           </div>
         </div>
         {analyzing && <div className="mt-7" aria-live="polite"><div className="flex justify-between text-micro uppercase text-bone/50"><span>Analyzing on this device</span><span>{progress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-bone/10"><div className="h-full bg-gold transition-all" style={{ width: `${progress}%` }} /></div></div>}
@@ -279,7 +279,7 @@ export function LoginExportPage() {
             <input id="login-export-upload" type="file" required accept=".csv,text/csv" onChange={(event) => { setFile(event.target.files?.[0] ?? null); setAnalysis(null); setAnalysisSource(null); setSelectedDomains(new Set()); setProgress(0) }} className="mt-3 block w-full border border-ink/15 bg-white px-3 py-3 text-body-s text-ink file:mr-4 file:border-0 file:bg-ink file:px-3 file:py-2 file:text-bone" />
             <label className="mt-5 flex items-start gap-3 border border-ink/10 bg-white p-4 text-body-s text-ink/65">
               <input type="checkbox" checked={ownsExport} onChange={(event) => setOwnsExport(event.target.checked)} className="mt-1 h-4 w-4 accent-gold" />
-              <span>This is my own saved-logins export, and I understand EchoTrace never reads or stores the password column.</span>
+              <span>This is my own saved-logins export, and I understand EchoTrace never stores or sends the password column.</span>
             </label>
             <button type="submit" disabled={analyzing || !file || !ownsExport} className={`${secondaryButtonClass} mt-5`}><KeyRound size={17} className="mr-2" />Analyze file</button>
           </form>

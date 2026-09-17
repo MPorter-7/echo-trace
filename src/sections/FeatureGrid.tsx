@@ -46,7 +46,7 @@ const FEATURES = [
   {
     icon: KeyRound,
     title: 'Saved-logins import',
-    body: 'Import a saved-logins export from your browser or password manager. Direct evidence of every account you had — the password column is never read or stored.',
+    body: 'Import a saved-logins export from your browser or password manager. Direct evidence of every account you had — the password column is never stored or transmitted.',
   },
   {
     icon: Fingerprint,
