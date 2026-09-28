@@ -67,6 +67,11 @@ export function Footer() {
                   Terms of Use
                 </Link>
               </li>
+              <li>
+                <Link to="/refunds" className="text-body-s text-slate-400 transition-colors hover:text-white">
+                  Refund & Cancellation
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
