@@ -25,6 +25,7 @@ const ArchivePage = lazy(() => import('./pages/dashboard/ArchivePage').then((mod
 const SettingsPage = lazy(() => import('./pages/dashboard/SettingsPage').then((module) => ({ default: module.SettingsPage })))
 const PrivacyPage = lazy(() => import('./pages/LegalPages').then((module) => ({ default: module.PrivacyPage })))
 const TermsPage = lazy(() => import('./pages/LegalPages').then((module) => ({ default: module.TermsPage })))
+const RefundPolicyPage = lazy(() => import('./pages/RefundPolicyPage').then((module) => ({ default: module.RefundPolicyPage })))
 const BillingCompletePage = lazy(() => import('./pages/BillingCompletePage').then((module) => ({ default: module.BillingCompletePage })))
 
 function RouteLoading() {
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/refunds" element={<RefundPolicyPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/billing/complete" element={<BillingCompletePage />} />
             <Route path="/dashboard" element={<DashboardLayout />}>
