@@ -3,8 +3,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.100.0'
 
 const archiveBucket = 'private-archives'
 const allowedOrigins = new Set([
+  'https://echo-trace.com',
+  'https://www.echo-trace.com',
   'https://echo-trace-eight.vercel.app',
   'http://localhost:3000',
+  'http://localhost:5173',
 ])
 
 class HttpError extends Error {
