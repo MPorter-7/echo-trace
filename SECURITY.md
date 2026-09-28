@@ -63,6 +63,7 @@ Match confidence is deterministic and explainable. Mutually exclusive supporting
 
 - Complete the two-user RLS tests after applying the migration.
 - Review Supabase Auth rate limits, email delivery, logs, and backup settings.
-- Obtain legal review of Privacy and Terms pages before commercial launch.
+- Obtain legal review of Privacy, Terms, and Refund & Cancellation pages before commercial launch.
+- Verify production CORS includes both `https://echo-trace.com` and `https://www.echo-trace.com` before enabling account deletion for production users.
 - Add malware scanning before raising upload limits or accepting additional file types.
-- Replace permissive Edge Function CORS with the production origin if the function will be used outside Supabase's standard client flow.
+- Keep Edge Function CORS restricted to the production EchoTrace origins and local development origins; do not use wildcard `*` CORS for authenticated functions.
