@@ -80,4 +80,7 @@ Redeploy after saving. `vercel.json` rewrites client routes such as `/dashboard/
 4. Accept the self-recovery consent.
 5. Complete the two-user RLS test in TESTING.md.
 6. Test identifier, provider-neutral `.mbox` upload, saved-logins `.csv` upload, timeline, match, archive, export, and deletion flows. Verify raw `.mbox` data and saved passwords are never sent and only selected aggregate findings reach Supabase. For delete-all, simulate a failed Storage request and confirm database records remain.
-7. Confirm `/privacy`, `/terms`, and direct dashboard URLs load on Vercel.
+7. Confirm `/privacy`, `/terms`, `/refunds`, and direct dashboard URLs load on Vercel.
+8. Confirm `https://echo-trace.com` and `https://www.echo-trace.com` are the intended production origins and are included in Supabase Edge Function CORS configuration.
+9. Confirm Stripe Checkout and the customer billing portal use the production `SITE_URL` and that the Stripe portal permits cancellation.
+10. Confirm the published Terms, Privacy Notice, and Refund & Cancellation Policy have received qualified legal review before taking real customer payments.
