@@ -59,6 +59,7 @@ Deno.serve(async (request) => {
       success_url: `${siteUrl}/billing/complete?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/#pricing`,
       allow_promotion_codes: true,
+      consent_collection: { terms_of_service: 'required' },
       client_reference_id: user.id,
       metadata: { supabase_user_id: user.id, plan, billing_terms_version: '2026-09-28', billing_consent_at: consentedAt },
       ...(plan === 'vault' ? { subscription_data: { metadata: { supabase_user_id: user.id, plan, billing_terms_version: '2026-09-28', billing_consent_at: consentedAt } } } : {}),
