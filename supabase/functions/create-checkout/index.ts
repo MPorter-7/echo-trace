@@ -31,7 +31,8 @@ Deno.serve(async (request) => {
   try {
     assertRequest(request)
     const user = await authenticatedUser(request)
-    const { plan } = await request.json() as { plan?: string }
+    const { plan, consentedAt } = await request.json() as { plan?: string; consentedAt?: string }
+    if (!consentedAt || Number.isNaN(Date.parse(consentedAt))) throw new HttpError(400, 'Please review and accept the purchase terms before checkout.')
     if (plan !== 'recovery' && plan !== 'vault') throw new HttpError(400, 'Choose a valid plan.')
 
     const priceId = Deno.env.get(plan === 'recovery' ? 'STRIPE_RECOVERY_PRICE_ID' : 'STRIPE_VAULT_PRICE_ID')
@@ -59,8 +60,15 @@ Deno.serve(async (request) => {
       cancel_url: `${siteUrl}/#pricing`,
       allow_promotion_codes: true,
       client_reference_id: user.id,
-      metadata: { supabase_user_id: user.id, plan },
-      ...(plan === 'vault' ? { subscription_data: { metadata: { supabase_user_id: user.id, plan } } } : {}),
+      metadata: { supabase_user_id: user.id, plan, billing_terms_version: '2026-09-28', billing_consent_at: consentedAt },
+      ...(plan === 'vault' ? { subscription_data: { metadata: { supabase_user_id: user.id, plan, billing_terms_version: '2026-09-28', billing_consent_at: consentedAt } } } : {}),
+      custom_text: {
+        submit: {
+          message: plan === 'vault'
+            ? 'Vault is $7.99 per month and renews automatically until canceled. By completing checkout, you agree to the Terms of Use and Refund & Cancellation Policy.'
+            : 'Recovery is a one-time $19.99 purchase. By completing checkout, you agree to the Terms of Use and Refund & Cancellation Policy.',
+        },
+      },
     })
     if (!session.url) throw new HttpError(500, 'Checkout could not be created.')
     return json(request, 200, { url: session.url })
