@@ -26,7 +26,7 @@ const plans = [
     name: 'Vault',
     price: '$7.99',
     cadence: 'per month',
-    description: 'Keep your recovered history organized, private, and available over time.',
+    description: 'Keep your recovered history organized, private, and available over time. Vault renews automatically at $7.99/month until canceled.',
     features: ['Everything in Recovery while active', 'Private long-term storage', 'Continued organization tools', 'Expanded file storage'],
     cta: 'Choose Vault',
     featured: false,
