@@ -17,7 +17,7 @@ interface BillingContextValue {
   billing: BillingRow | null
   loading: boolean
   refresh: () => Promise<void>
-  startCheckout: (plan: Exclude<BillingPlan, 'free'>) => Promise<string>
+  startCheckout: (plan: Exclude<BillingPlan, 'free'>, consentedAt: string) => Promise<string>
   openPortal: () => Promise<string>
 }
 
@@ -55,7 +55,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
     return url
   }, [])
 
-  const startCheckout = useCallback((plan: 'recovery' | 'vault') => invoke('create-checkout', { plan }), [invoke])
+  const startCheckout = useCallback((plan: 'recovery' | 'vault', consentedAt: string) => invoke('create-checkout', { plan, consentedAt }), [invoke])
   const openPortal = useCallback(() => invoke('create-billing-portal'), [invoke])
   const plan: BillingPlan = ['active', 'trialing'].includes(billing?.subscription_status ?? '') ? 'vault' : billing?.recovery_owned ? 'recovery' : 'free'
   const value = useMemo(() => ({ plan, billing, loading, refresh, startCheckout, openPortal }), [billing, loading, openPortal, plan, refresh, startCheckout])
