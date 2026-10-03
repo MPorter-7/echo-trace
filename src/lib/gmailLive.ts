@@ -28,6 +28,11 @@ interface GoogleTokenResponse {
   error_description?: string
 }
 
+interface GoogleTokenErrorResponse {
+  type?: string
+  message?: string
+}
+
 declare global {
   interface Window {
     google?: {
@@ -37,6 +42,7 @@ declare global {
             client_id: string
             scope: string
             callback: (response: GoogleTokenResponse) => void
+            error_callback?: (error: GoogleTokenErrorResponse) => void
           }) => GoogleTokenClient
         }
       }
@@ -77,6 +83,13 @@ export async function requestGmailAccessToken(clientId: string): Promise<string>
         }
         resolve(response.access_token)
       },
+      // Closing the Google popup, a blocked popup, or an unsupported
+      // browser calls this instead of the callback above — without it,
+      // this promise would never settle and the page would be stuck
+      // "Connecting..." until refreshed.
+      error_callback: (error) => {
+        reject(new Error(error?.type === 'popup_closed' ? 'The Google sign-in window was closed before finishing.' : 'Google sign-in could not be completed. If your browser is blocking popups, allow them for this site and try again.'))
+      },
     })
     client.requestAccessToken()
   })
@@ -110,6 +123,15 @@ async function fetchMessageMetadata(id: string, accessToken: string): Promise<Pa
   }
 }
 
+// Caps total messages scanned in one connect. Each message is one serial
+// API round-trip (Gmail has no batch-metadata endpoint usable from a
+// browser without extra complexity), so an unbounded scan on a large,
+// broadly-matching mailbox could mean thousands of sequential requests —
+// slow, and increasingly likely to hit a rate limit or outlive the
+// access token's ~1 hour lifetime. 500 messages is enough to surface a
+// representative picture of someone's account history for a beta feature.
+const MAX_MESSAGES_SCANNED = 500
+
 // Scans Gmail directly from the browser using the token's short-lived
 // access — only message metadata (headers + the short snippet Gmail
 // already returns with metadata) is requested, never the full body.
@@ -121,22 +143,35 @@ export async function analyzeGmailLive(accessToken: string, onProgress?: (scanne
   let scanned = 0
   let estimatedTotal = 0
 
-  do {
-    const listUrl = new URL(GMAIL_API_BASE)
-    listUrl.searchParams.set('q', GMAIL_QUERY)
-    listUrl.searchParams.set('maxResults', PAGE_SIZE)
-    if (pageToken) listUrl.searchParams.set('pageToken', pageToken)
-    const listResponse = await gmailFetch(listUrl, accessToken) as { messages?: { id: string }[]; resultSizeEstimate?: number; nextPageToken?: string }
-    estimatedTotal = Math.max(estimatedTotal, listResponse.resultSizeEstimate ?? 0)
+  try {
+    while (scanned < MAX_MESSAGES_SCANNED) {
+      const listUrl = new URL(GMAIL_API_BASE)
+      listUrl.searchParams.set('q', GMAIL_QUERY)
+      listUrl.searchParams.set('maxResults', PAGE_SIZE)
+      if (pageToken) listUrl.searchParams.set('pageToken', pageToken)
+      const listResponse = await gmailFetch(listUrl, accessToken) as { messages?: { id: string }[]; resultSizeEstimate?: number; nextPageToken?: string }
+      estimatedTotal = Math.max(estimatedTotal, listResponse.resultSizeEstimate ?? 0)
+      const ids = listResponse.messages ?? []
+      if (!ids.length) break
 
-    for (const { id } of listResponse.messages ?? []) {
-      const message = await fetchMessageMetadata(id, accessToken)
-      if (message) analyzer.addMessage(message)
-      scanned += 1
-      onProgress?.(scanned, Math.max(estimatedTotal, scanned))
+      for (const { id } of ids) {
+        if (scanned >= MAX_MESSAGES_SCANNED) break
+        const message = await fetchMessageMetadata(id, accessToken)
+        if (message) analyzer.addMessage(message)
+        scanned += 1
+        onProgress?.(scanned, Math.max(estimatedTotal, scanned))
+      }
+
+      pageToken = listResponse.nextPageToken
+      if (!pageToken) break
     }
-    pageToken = listResponse.nextPageToken
-  } while (pageToken)
+  } catch (error) {
+    // A rate limit or token expiry partway through a long scan shouldn't
+    // throw away everything already classified — only propagate the
+    // error if nothing was scanned yet, so the caller still gets a clear
+    // failure for e.g. an immediately-invalid token.
+    if (scanned === 0) throw error
+  }
 
   return analyzer.finish()
 }

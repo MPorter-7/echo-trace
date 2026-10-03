@@ -329,4 +329,15 @@ describe('Google Takeout .zip extraction', () => {
     const file = new File([zipped], 'takeout.zip', { type: 'application/zip' })
     await expect(analyzeMboxFile(file)).rejects.toThrow(/No \.mbox file was found/)
   })
+
+  it('still extracts correctly when a large non-mbox entry follows the mbox entry', async () => {
+    const zipped = zipSync({
+      'Takeout/Mail/All mail Including Spam and Trash.mbox': strToU8(mailbox),
+      'Takeout/archive_browser.html': strToU8('<html>'.repeat(50_000)),
+    })
+    const file = new File([zipped], 'takeout.zip', { type: 'application/zip' })
+    const result = await analyzeMboxFile(file)
+    expect(result.messagesScanned).toBe(3)
+    expect(result.findings[0]).toMatchObject({ serviceName: 'Example', senderDomain: 'example.com' })
+  })
 })

@@ -455,7 +455,15 @@ async function feedFromTakeoutZip(file: File, feeder: MboxLineFeeder, onProgress
   const unzipper = new Unzip()
   unzipper.register(UnzipInflate)
   unzipper.onfile = (zipEntry) => {
-    if (foundEntry || !zipEntry.name.toLowerCase().endsWith('.mbox')) return
+    if (foundEntry || !zipEntry.name.toLowerCase().endsWith('.mbox')) {
+      // fflate buffers an entry's compressed bytes in memory until it is
+      // started, waiting in case the caller decides to start it later.
+      // An ignored entry left unstarted would accumulate unbounded —
+      // defeating the point of streaming this. Start it with a handler
+      // that immediately discards its output instead.
+      try { zipEntry.ondata = () => {}; zipEntry.start() } catch { /* Unsupported compression on a file we don't want anyway; nothing to recover. */ }
+      return
+    }
     foundEntry = true
     zipEntry.ondata = (error, chunk) => {
       if (error) { zipError = 'The zip archive could not be read. Download it again from Google Takeout.'; return }
