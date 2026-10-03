@@ -1,4 +1,4 @@
-import { ArrowUpRight, Check, ChevronDown, CircleHelp, FileArchive, FileSearch, History, LockKeyhole, Mail, ShieldCheck, Trash2, X, Zap } from 'lucide-react'
+import { ArrowUpRight, Check, ChevronDown, CircleHelp, FileArchive, FileSearch, History, LockKeyhole, Mail, ShieldCheck, Sparkles, Trash2, X, Zap } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toast } from 'sonner'
@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { EmptyState, PageHeader } from '../../components/DashboardUI'
 import { primaryButtonClass, secondaryButtonClass } from '../../components/FormFields'
 import { canTransitionMatch, confidenceLevel } from '../../lib/confidence'
+import { analyzeGmailLive, getGoogleClientId, isLiveGmailConfigured, requestGmailAccessToken } from '../../lib/gmailLive'
 import { analyzeMboxFile, formatEmailEvidenceKind, shouldAutoSelectFinding, validateMboxFile, type EmailEvidenceKind, type EmailHistoryAnalysis, type EmailHistoryFindingDraft } from '../../lib/mbox'
 import { supabase } from '../../lib/supabase'
 import type { EmailFinding, EmailImport, MatchStatus } from '../../types/echo'
@@ -18,7 +19,7 @@ function formatDate(value: string | null) {
 interface AnalysisSource {
   name: string
   sizeBytes: number
-  kind: 'mbox'
+  kind: 'mbox' | 'gmail'
 }
 
 export function EmailHistoryPage() {
@@ -33,6 +34,8 @@ export function EmailHistoryPage() {
   const [progress, setProgress] = useState(0)
   const [progressLabel, setProgressLabel] = useState('Checking account evidence')
   const [analyzing, setAnalyzing] = useState(false)
+  const [connectingGmail, setConnectingGmail] = useState(false)
+  const googleClientId = useMemo(() => getGoogleClientId(), [])
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -85,6 +88,43 @@ export function EmailHistoryPage() {
       toast.error(error instanceof Error ? error.message : 'The mailbox could not be analyzed.')
     }
     setAnalyzing(false)
+  }
+
+  const connectGmail = async () => {
+    if (!googleClientId) return
+    if (!ownsMailbox) return toast.error('Confirm that this is your mailbox and part of your own digital history.')
+
+    setConnectingGmail(true)
+    setAnalysis(null)
+    setAnalysisSource(null)
+    setSelectedDomains(new Set())
+    setProgress(0)
+    try {
+      // The access token lives only in this local variable for the
+      // lifetime of this scan — it is never stored in component state,
+      // localStorage, or sent anywhere other than gmail.googleapis.com.
+      const accessToken = await requestGmailAccessToken(googleClientId)
+      setAnalyzing(true)
+      setProgress(0)
+      setProgressLabel('Scanning your Gmail account')
+      const result = await analyzeGmailLive(accessToken, (scanned, estimatedTotal) => {
+        setProgress(estimatedTotal > 0 ? Math.min(99, Math.round((scanned / estimatedTotal) * 100)) : 0)
+        setProgressLabel(`Scanned ${scanned.toLocaleString()} of ~${estimatedTotal.toLocaleString()} messages`)
+      })
+      setProgress(100)
+      setAnalysis(result)
+      setAnalysisSource({ name: 'Live Gmail scan', sizeBytes: 0, kind: 'gmail' })
+      const recommended = result.findings.filter((finding) => finding.recommended)
+      const autoSelected = recommended.filter(shouldAutoSelectFinding)
+      setSelectedDomains(new Set(autoSelected.map(({ senderDomain }) => senderDomain)))
+      if (autoSelected.length) toast.success(`Selected ${autoSelected.length} strong account${autoSelected.length === 1 ? '' : 's'} above 80% confidence after automatic cleanup.`)
+      else if (recommended.length) toast.info(`Found ${recommended.length} borderline account signal${recommended.length === 1 ? '' : 's'}, but none exceeded 80% confidence. Nothing was selected.`)
+      else toast.info('No account evidence was recognized in this scan. Nothing was uploaded or saved.')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Gmail could not be scanned.')
+    }
+    setAnalyzing(false)
+    setConnectingGmail(false)
   }
 
   const toggleFinding = (domain: string) => {
@@ -238,31 +278,36 @@ export function EmailHistoryPage() {
           <div>
             <p className="flex items-center gap-2 text-label uppercase text-gold"><Zap size={15} />Start here</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">Import your email history</h2>
-            <p className="mt-4 max-w-2xl text-body-s leading-relaxed text-bone/65">Export your mailbox from your provider, then upload the `.mbox` file below. EchoTrace finds signups, password resets, security notices, and other account evidence without connecting to your email account.</p>
+            <p className="mt-4 max-w-2xl text-body-s leading-relaxed text-bone/65">Drop in the `.zip` Google Takeout gives you (or an already-extracted `.mbox` file) below. EchoTrace finds signups, password resets, security notices, and other account evidence without connecting to your email account.</p>
           </div>
           <div className="border border-emerald-400/25 bg-emerald-400/10 p-5 text-body-s text-emerald-100">
             <p className="flex items-center gap-2 font-medium"><LockKeyhole size={18} />Private by design</p>
             <p className="mt-3 leading-relaxed text-emerald-100/70">Your raw mailbox stays on this device. EchoTrace does not connect to, copy, or store your email messages, addresses, or subjects. Only the account summaries you approve are saved.</p>
           </div>
         </div>
-        {analyzing && <div className="mt-7" aria-live="polite"><div className="flex justify-between text-micro uppercase text-bone/50"><span>{progressLabel}</span><span>{progress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-bone/10"><div className="h-full bg-gold transition-all" style={{ width: `${progress}%` }} /></div></div>}
+        {(analyzing || connectingGmail) && <div className="mt-7" aria-live="polite"><div className="flex justify-between text-micro uppercase text-bone/50"><span>{connectingGmail && !analyzing ? 'Waiting for Google sign-in' : progressLabel}</span><span>{progress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-bone/10"><div className="h-full bg-gold transition-all" style={{ width: `${progress}%` }} /></div></div>}
       </section>
 
       <section className="mt-5 border border-ink/10 bg-white">
         <div className="grid gap-7 p-6 lg:grid-cols-[0.75fr_1.25fr] lg:p-8">
           <div>
             <p className="text-label uppercase text-gold">Works with your provider</p>
-            <p className="mt-3 text-body-s leading-relaxed text-ink/55">Upload a `.mbox` export from Gmail via Google Takeout, Yahoo, Proton Mail, Apple Mail, Thunderbird, or another compatible provider. Outlook `.pst` files must be converted to `.mbox` first. The file stays on this device; only findings you select are saved.</p>
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-body-s"><a href="https://support.google.com/accounts/answer/3024190" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-ink underline decoration-gold underline-offset-4">Google export help <ArrowUpRight size={15} /></a><a href="https://proton.me/support/proton-mail-export-tool" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-ink underline decoration-gold underline-offset-4">Proton export help <ArrowUpRight size={15} /></a></div>
+            <p className="mt-3 text-body-s leading-relaxed text-ink/55">Upload the Google Takeout `.zip` directly &mdash; EchoTrace extracts the `.mbox` file inside it on this device, so there is no need to unzip it yourself first. Also works with an already-extracted `.mbox` export from Yahoo, Proton Mail, Apple Mail, Thunderbird, or another compatible provider. Outlook `.pst` files must be converted to `.mbox` first. The file stays on this device; only findings you select are saved.</p>
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-body-s"><a href="https://takeout.google.com/settings/takeout/custom/gmail" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-ink underline decoration-gold underline-offset-4">Start a Google Takeout export <ArrowUpRight size={15} /></a><a href="https://proton.me/support/proton-mail-export-tool" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-ink underline decoration-gold underline-offset-4">Proton export help <ArrowUpRight size={15} /></a></div>
           </div>
           <form onSubmit={analyze} className="border border-ink/10 bg-bone p-6">
-            <label htmlFor="mbox-upload" className="text-body-s font-medium">Choose your exported `.mbox` file</label>
-            <input id="mbox-upload" type="file" required accept=".mbox,application/mbox" onChange={(event) => { setFile(event.target.files?.[0] ?? null); setAnalysis(null); setAnalysisSource(null); setSelectedDomains(new Set()); setProgress(0) }} className="mt-3 block w-full border border-ink/15 bg-white px-3 py-3 text-body-s text-ink file:mr-4 file:border-0 file:bg-ink file:px-3 file:py-2 file:text-bone" />
+            <label htmlFor="mbox-upload" className="text-body-s font-medium">Choose your Takeout `.zip` or extracted `.mbox` file</label>
+            <input id="mbox-upload" type="file" required accept=".mbox,application/mbox,.zip,application/zip" onChange={(event) => { setFile(event.target.files?.[0] ?? null); setAnalysis(null); setAnalysisSource(null); setSelectedDomains(new Set()); setProgress(0) }} className="mt-3 block w-full border border-ink/15 bg-white px-3 py-3 text-body-s text-ink file:mr-4 file:border-0 file:bg-ink file:px-3 file:py-2 file:text-bone" />
             <label className="mt-5 flex items-start gap-3 border border-ink/10 bg-white p-4 text-body-s text-ink/65">
               <input type="checkbox" checked={ownsMailbox} onChange={(event) => setOwnsMailbox(event.target.checked)} className="mt-1 h-4 w-4 accent-gold" />
               <span>This is my mailbox and I am reconstructing only my own history.</span>
             </label>
-            <button type="submit" disabled={analyzing || !file || !ownsMailbox} className={`${secondaryButtonClass} mt-5`}><FileSearch size={17} className="mr-2" />Analyze file</button>
+            <button type="submit" disabled={analyzing || connectingGmail || !file || !ownsMailbox} className={`${secondaryButtonClass} mt-5`}><FileSearch size={17} className="mr-2" />Analyze file</button>
+            {isLiveGmailConfigured() && <>
+              <div className="my-5 flex items-center gap-3 text-micro uppercase text-ink/35"><span className="h-px flex-1 bg-ink/10" />or<span className="h-px flex-1 bg-ink/10" /></div>
+              <button type="button" onClick={() => void connectGmail()} disabled={analyzing || connectingGmail || !ownsMailbox} className={`${secondaryButtonClass} w-full`}><Sparkles size={17} className="mr-2" />{connectingGmail ? 'Connecting…' : 'Connect Gmail (beta)'}</button>
+              <p className="mt-3 text-micro leading-relaxed text-ink/40">Scans subjects and senders directly from your Gmail account &mdash; no file export needed. This is an early beta running in Google&rsquo;s testing mode: only Gmail accounts the EchoTrace team has explicitly added as testers can use it, and you&rsquo;ll see Google&rsquo;s &ldquo;unverified app&rdquo; screen before continuing. Access stays in memory for this scan only and is never sent anywhere except Google.</p>
+            </>}
           </form>
         </div>
       </section>
