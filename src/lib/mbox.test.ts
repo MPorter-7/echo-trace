@@ -1,5 +1,6 @@
+import { strToU8, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
-import { AUTO_SELECT_CONFIDENCE_THRESHOLD, MAX_RECOMMENDED_FINDINGS, MboxAnalyzer, decodeEmailHeader, shouldAutoSelectFinding, validateMboxFile } from './mbox'
+import { AUTO_SELECT_CONFIDENCE_THRESHOLD, MAX_RECOMMENDED_FINDINGS, MboxAnalyzer, analyzeMboxFile, decodeEmailHeader, shouldAutoSelectFinding, validateMboxFile } from './mbox'
 
 function analyze(text: string, splitAt?: number) {
   const parser = new MboxAnalyzer()
@@ -302,9 +303,41 @@ Read our latest security article.
     expect(decodeEmailHeader('=?UTF-8?B?UmVjZWlwdA==?=')).toBe('Receipt')
   })
 
-  it('requires a non-empty extracted .mbox file', () => {
+  it('accepts a non-empty .mbox file or Takeout .zip, and rejects anything else', () => {
     expect(validateMboxFile({ name: 'All mail.mbox', size: 42 }).valid).toBe(true)
-    expect(validateMboxFile({ name: 'takeout.zip', size: 42 }).valid).toBe(false)
+    expect(validateMboxFile({ name: 'takeout-20260101.zip', size: 42 }).valid).toBe(true)
     expect(validateMboxFile({ name: 'empty.mbox', size: 0 }).valid).toBe(false)
+    expect(validateMboxFile({ name: 'export.pst', size: 42 }).valid).toBe(false)
+  })
+})
+
+describe('Google Takeout .zip extraction', () => {
+  it('finds and analyzes the .mbox file inside a Takeout zip', async () => {
+    const zipped = zipSync({
+      'Takeout/archive_browser.html': strToU8('<html></html>'),
+      'Takeout/Mail/All mail Including Spam and Trash.mbox': strToU8(mailbox),
+    })
+    const file = new File([zipped], 'takeout-20260101T000000Z.zip', { type: 'application/zip' })
+    const result = await analyzeMboxFile(file)
+    expect(result.messagesScanned).toBe(3)
+    expect(result.findings).toHaveLength(1)
+    expect(result.findings[0]).toMatchObject({ serviceName: 'Example', senderDomain: 'example.com' })
+  })
+
+  it('rejects a zip with no .mbox file inside', async () => {
+    const zipped = zipSync({ 'Takeout/archive_browser.html': strToU8('<html></html>') })
+    const file = new File([zipped], 'takeout.zip', { type: 'application/zip' })
+    await expect(analyzeMboxFile(file)).rejects.toThrow(/No \.mbox file was found/)
+  })
+
+  it('still extracts correctly when a large non-mbox entry follows the mbox entry', async () => {
+    const zipped = zipSync({
+      'Takeout/Mail/All mail Including Spam and Trash.mbox': strToU8(mailbox),
+      'Takeout/archive_browser.html': strToU8('<html>'.repeat(50_000)),
+    })
+    const file = new File([zipped], 'takeout.zip', { type: 'application/zip' })
+    const result = await analyzeMboxFile(file)
+    expect(result.messagesScanned).toBe(3)
+    expect(result.findings[0]).toMatchObject({ serviceName: 'Example', senderDomain: 'example.com' })
   })
 })

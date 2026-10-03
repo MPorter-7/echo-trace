@@ -11,7 +11,8 @@ The existing public landing page and Supabase waitlist remain at `/`. Authentica
 - Supabase email/password signup, email verification, login, logout, reset, persistent sessions, and protected routes
 - Required self-recovery consent with a versioned audit record
 - Evidence-first reconstruction onboarding that begins with the verified signup email and keeps manual memories optional
-- Provider-neutral local `.mbox` imports from Gmail via Google Takeout, Yahoo, Proton Mail, Apple Mail, Thunderbird, and other compatible exports; raw mailbox content remains in the browser and only user-approved aggregate findings are saved
+- Provider-neutral local `.mbox` imports from Gmail via Google Takeout, Yahoo, Proton Mail, Apple Mail, Thunderbird, and other compatible exports; the Google Takeout `.zip` can be dropped in directly and is extracted on-device; raw mailbox content remains in the browser and only user-approved aggregate findings are saved
+- Optional live Gmail connect (beta, Google OAuth testing mode only) that scans subject lines and senders directly from the browser to `gmail.googleapis.com`; the access token stays in memory for one scan and is never sent to EchoTrace's backend. Disabled unless `VITE_GOOGLE_CLIENT_ID` is configured; see [SETUP.md](SETUP.md)
 - Local saved-logins `.csv` import from Chrome, Firefox, Edge, Safari, Bitwarden, 1Password, and LastPass; only the site and username are extracted, the password column is discarded during parsing and never stored or transmitted
 - Private identifiers with clear separation between verified account email and unverified historical emails
 - Timeline CRUD with exact, month/year, year-only, and unknown dates; search, filters, sorting, and two views

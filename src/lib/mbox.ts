@@ -1,3 +1,4 @@
+import { Unzip, UnzipInflate } from 'fflate'
 import { isSuspiciousDomain, registrableDomain, serviceNameFromDomain } from './domain'
 
 export const EMAIL_EVIDENCE_KINDS = ['account_signup', 'email_verification', 'password_reset', 'receipt', 'account_notice'] as const
@@ -396,10 +397,93 @@ export class MboxAnalyzer {
 }
 
 export function validateMboxFile(file: Pick<File, 'name' | 'size'>) {
-  if (file.size < 1) return { valid: false, error: 'Choose a Google Takeout .mbox file that is not empty.' }
-  if (!file.name.toLowerCase().endsWith('.mbox')) return { valid: false, error: 'Extract the Google Takeout archive, then choose a file ending in .mbox.' }
-  if (file.name.length > 180) return { valid: false, error: 'Use an .mbox file name with 180 characters or fewer.' }
+  if (file.size < 1) return { valid: false, error: 'Choose a Google Takeout .zip or an extracted .mbox file that is not empty.' }
+  const name = file.name.toLowerCase()
+  if (!name.endsWith('.mbox') && !name.endsWith('.zip')) return { valid: false, error: 'Choose the .zip file Google Takeout gave you, or a file ending in .mbox.' }
+  if (file.name.length > 180) return { valid: false, error: 'Use a file name with 180 characters or fewer.' }
   return { valid: true, error: null }
+}
+
+// Feeds raw mbox text to an analyzer incrementally, shared by the plain
+// .mbox path and the bytes decompressed out of a Takeout .zip.
+class MboxLineFeeder {
+  private analyzer: MboxAnalyzer
+  private decoder = new TextDecoder()
+  private pending = ''
+
+  constructor(analyzer: MboxAnalyzer) {
+    this.analyzer = analyzer
+  }
+
+  push(chunk: Uint8Array) {
+    this.pending += this.decoder.decode(chunk, { stream: true })
+    const lines = this.pending.split('\n')
+    this.pending = lines.pop() ?? ''
+    for (const line of lines) this.analyzer.addLine(line.endsWith('\r') ? line.slice(0, -1) : line)
+    if (this.pending.length > MAX_PENDING_LINE_CHARS) {
+      this.analyzer.addLine(this.pending.slice(0, MAX_PENDING_LINE_CHARS))
+      this.pending = ''
+    }
+  }
+
+  finish() {
+    this.pending += this.decoder.decode()
+    if (this.pending) this.analyzer.addLine(this.pending.endsWith('\r') ? this.pending.slice(0, -1) : this.pending)
+  }
+}
+
+async function feedFromMboxFile(file: File, feeder: MboxLineFeeder, onProgress?: (progress: number) => void) {
+  const reader = file.stream().getReader()
+  let bytesRead = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    bytesRead += value.byteLength
+    feeder.push(value)
+    onProgress?.(Math.min(99, Math.round((bytesRead / file.size) * 100)))
+  }
+}
+
+// Streams a Google Takeout .zip through fflate's chunked inflate, feeding
+// only the .mbox entry's decompressed bytes to the analyzer. The zip never
+// has to be fully loaded into memory, matching the streaming behavior of
+// the plain .mbox path for large exports.
+async function feedFromTakeoutZip(file: File, feeder: MboxLineFeeder, onProgress?: (progress: number) => void) {
+  let foundEntry = false
+  let zipError: string | null = null
+
+  const unzipper = new Unzip()
+  unzipper.register(UnzipInflate)
+  unzipper.onfile = (zipEntry) => {
+    if (foundEntry || !zipEntry.name.toLowerCase().endsWith('.mbox')) {
+      // fflate buffers an entry's compressed bytes in memory until it is
+      // started, waiting in case the caller decides to start it later.
+      // An ignored entry left unstarted would accumulate unbounded —
+      // defeating the point of streaming this. Start it with a handler
+      // that immediately discards its output instead.
+      try { zipEntry.ondata = () => {}; zipEntry.start() } catch { /* Unsupported compression on a file we don't want anyway; nothing to recover. */ }
+      return
+    }
+    foundEntry = true
+    zipEntry.ondata = (error, chunk) => {
+      if (error) { zipError = 'The zip archive could not be read. Download it again from Google Takeout.'; return }
+      if (chunk.length) feeder.push(chunk)
+    }
+    zipEntry.start()
+  }
+
+  const reader = file.stream().getReader()
+  let bytesRead = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) { unzipper.push(new Uint8Array(0), true); break }
+    bytesRead += value.byteLength
+    unzipper.push(value)
+    if (zipError) throw new Error(zipError)
+    onProgress?.(Math.min(99, Math.round((bytesRead / file.size) * 100)))
+  }
+  if (zipError) throw new Error(zipError)
+  if (!foundEntry) throw new Error('No .mbox file was found inside this zip. Make sure you selected the Mail export from Google Takeout.')
 }
 
 export async function analyzeMboxFile(file: File, onProgress?: (progress: number) => void): Promise<EmailHistoryAnalysis> {
@@ -407,28 +491,12 @@ export async function analyzeMboxFile(file: File, onProgress?: (progress: number
   if (!validation.valid) throw new Error(validation.error ?? 'Invalid mailbox file.')
 
   const analyzer = new MboxAnalyzer()
-  const reader = file.stream().getReader()
-  const decoder = new TextDecoder()
-  let pending = ''
-  let bytesRead = 0
+  const feeder = new MboxLineFeeder(analyzer)
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    bytesRead += value.byteLength
-    pending += decoder.decode(value, { stream: true })
-    const lines = pending.split('\n')
-    pending = lines.pop() ?? ''
-    for (const line of lines) analyzer.addLine(line.endsWith('\r') ? line.slice(0, -1) : line)
-    if (pending.length > MAX_PENDING_LINE_CHARS) {
-      analyzer.addLine(pending.slice(0, MAX_PENDING_LINE_CHARS))
-      pending = ''
-    }
-    onProgress?.(Math.min(99, Math.round((bytesRead / file.size) * 100)))
-  }
+  if (file.name.toLowerCase().endsWith('.zip')) await feedFromTakeoutZip(file, feeder, onProgress)
+  else await feedFromMboxFile(file, feeder, onProgress)
 
-  pending += decoder.decode()
-  if (pending) analyzer.addLine(pending.endsWith('\r') ? pending.slice(0, -1) : pending)
+  feeder.finish()
   onProgress?.(100)
   return analyzer.finish()
 }

@@ -38,8 +38,9 @@ Use two separate private browser profiles.
 ## Feature checks
 
 - Reconstruction: confirmed signup email appears without re-entry; missing verified identifier repairs only for the authenticated email; the primary action opens Find My Accounts; readiness changes with identifiers, imports, and findings
-- Provider-neutral email export: reject empty/non-`.mbox` files; analyze representative Google Takeout, Yahoo, Proton Mail, Apple Mail, or Thunderbird `.mbox` fixtures; verify progress and local-only subject examples; confirm Outlook `.pst` is rejected with conversion guidance
-- Email-history privacy: use browser network tools to confirm every provider's raw `.mbox` remains on-device and only selected aggregate rows reach Supabase
+- Provider-neutral email export: reject empty/non-`.mbox`/non-`.zip` files; analyze representative Google Takeout `.mbox` and `.zip` fixtures plus Yahoo, Proton Mail, Apple Mail, or Thunderbird `.mbox` fixtures; confirm a `.zip` with no `.mbox` entry is rejected with a clear error; verify progress and local-only subject examples; confirm Outlook `.pst` is rejected with conversion guidance
+- Email-history privacy: use browser network tools to confirm every provider's raw `.mbox`/`.zip` remains on-device and only selected aggregate rows reach Supabase
+- Live Gmail connect (only when `VITE_GOOGLE_CLIENT_ID` is set): confirm the button is absent when unset; with it set, connect a Google test-user account and use browser network tools to confirm requests go only to `gmail.googleapis.com`/`accounts.google.com`, never to Supabase or any EchoTrace endpoint; confirm the access token is not visible in `localStorage`/`sessionStorage`; confirm a denied/cancelled consent prompt surfaces a clear error instead of hanging
 - Saved-logins export: reject empty/non-`.csv` files; analyze representative Chrome, Firefox, Edge, Safari, Bitwarden, 1Password, and LastPass `.csv` fixtures; verify progress, subdomain merging, and non-login-type rows (notes/cards/identities) are skipped
 - Saved-logins privacy: use browser network tools to confirm the raw `.csv` and every password value stay on-device and only selected site/username summaries reach Supabase
 - Identifiers: create, edit, duplicate prevention, delete, URL/email validation, historical email label
