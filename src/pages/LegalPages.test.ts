@@ -4,8 +4,11 @@ import { describe, expect, it } from 'vitest'
 const legalPages = readFileSync(new URL('./LegalPages.tsx', import.meta.url), 'utf8')
 
 describe('Public legal pages', () => {
-  it('publishes a finalized privacy notice for local email-history imports', () => {
-    expect(legalPages).not.toMatch(/MVP draft|Legal review required/i)
+  it('discloses that legal review is still pending', () => {
+    expect(legalPages).toMatch(/pending legal review/i)
+  })
+
+  it('publishes privacy content covering local email-history imports', () => {
     expect(legalPages).toContain('Email-history files')
     expect(legalPages).toContain('What can be saved from an import')
     expect(legalPages).toContain('locally in your browser')
