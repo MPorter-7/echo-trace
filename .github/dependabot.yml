@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      # Tailwind 4 is a rewrite that needs a manual migration (new PostCSS
+      # plugin and config). Stay on v3 until that migration is done on purpose.
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
