@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Anam agent widget (index.html): hidden on sign-in/billing routes and during checkout consent. */
+html[data-agent-hidden] anam-agent,
+html[data-agent-checkout] anam-agent {
+  display: none !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
