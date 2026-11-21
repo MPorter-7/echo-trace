@@ -5,6 +5,7 @@ import { AuthProvider } from './auth/AuthContext'
 import { BillingProvider } from './billing/BillingContext'
 import { Home } from './pages/Home'
 import { ProtectedRoute, PublicOnlyRoute } from './auth/RouteGuards'
+import { AgentVisibility } from './components/AgentVisibility'
 
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then((module) => ({ default: module.LoginPage })))
 const SignupPage = lazy(() => import('./pages/auth/SignupPage').then((module) => ({ default: module.SignupPage })))
@@ -35,6 +36,7 @@ function RouteLoading() {
 export default function App() {
   return (
     <BrowserRouter>
+      <AgentVisibility />
       <AuthProvider>
         <BillingProvider>
         <Suspense fallback={<RouteLoading />}><Routes>

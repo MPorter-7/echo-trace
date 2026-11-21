@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useAuth } from '../auth/AuthContext'
 import { useBilling, type BillingPlan } from './BillingContext'
+import { holdAgentHiddenForCheckout } from '../lib/agentVisibility'
 
 export function PlanButton({ plan, children, className }: { plan: BillingPlan; children: React.ReactNode; className: string }) {
   const { user } = useAuth()
@@ -11,6 +12,8 @@ export function PlanButton({ plan, children, className }: { plan: BillingPlan; c
   const [working, setWorking] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [consent, setConsent] = useState(false)
+
+  useEffect(() => (confirmOpen ? holdAgentHiddenForCheckout() : undefined), [confirmOpen])
 
   const choose = async () => {
     if (plan === 'free') { navigate(user ? '/dashboard' : '/signup'); return }
