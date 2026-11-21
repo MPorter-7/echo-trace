@@ -65,6 +65,14 @@
       agent-id="7c3dab43-bb5b-4a18-9974-fa2823ef395c"
       api-base-url="https://lab.anam.ai"
     ></anam-agent>
-    <script src="https://unpkg.com/@anam-ai/agent-widget" async></script>
+    <!-- Pinned to an exact version with Subresource Integrity so the third-party
+         script cannot change without a deliberate update here. To upgrade, bump the
+         version and recompute: curl -s URL | openssl dgst -sha384 -binary | openssl base64 -A -->
+    <script
+      src="https://unpkg.com/@anam-ai/agent-widget@0.8.0/dist/index.umd.js"
+      integrity="sha384-4Z4FU2wuqWvykHhn4qPvZSyoJJRV7yuRD7/PSD4DhSJvg0Z+vg8W/PH2s+rO9Yo8"
+      crossorigin="anonymous"
+      async
+    ></script>
   </body>
 </html>
